@@ -39,6 +39,7 @@ Release/
 Output/
 doc/
 bin/
+Freetype/
 
 #Other Files
 *.pdb
