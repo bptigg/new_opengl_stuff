@@ -61,7 +61,15 @@ void Application::Run()
 
 		if (!m_minimized)
 		{
+			QUADrender_param test;
+			test.color = { 0.5f, 0.2f, 0.3f, 0.6f };
+			test.layer = 1;
+			test.size = { 24.0f, 42.0f };
+			test.rotation = 1.5f;
+			test.Texture = "s_white";
 
+			renderer2d::draw_quad({ 0.0f , 0.0f }, test);
+			renderer2d::draw();
 		}
 		m_window->On_Update();
 	}

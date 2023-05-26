@@ -86,6 +86,7 @@ void renderer2d::Init()
 	s_TexLibary = new Texture_Library;
 	s_SubTexLibrary = new SubTexture_Library;
 	s_ShaderLibrary = new Shader_Library;
+	Rendering_manager::Init();
 
 	GLint max_slots;
 	glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &max_slots);
@@ -210,6 +211,8 @@ void renderer2d::Shutdown()
 	delete s_SubTexLibrary;
 	delete s_ShaderLibrary;
 
+	Rendering_manager::Shutdown();
+
 	//delete s_data.Quad_IB;
 }
 
@@ -223,10 +226,10 @@ void renderer2d::End_Scene()
 
 void renderer2d::draw_quad(const glm::vec2& position, QUADrender_param& render_data)
 {
-	renderer2d::draw_qaud({ position.x, position.y, 0.0f }, render_data);
+	renderer2d::draw_quad({ position.x, position.y, 0.0f }, render_data);
 }
 
-void renderer2d::draw_qaud(const glm::vec3& position, QUADrender_param& render_data)
+void renderer2d::draw_quad(const glm::vec3& position, QUADrender_param& render_data)
 {
 	glm::mat4 transform = glm::mat4(1.0f);
 	if (render_data.rotation == 0.0f)
@@ -248,13 +251,13 @@ void renderer2d::draw_qaud(const glm::vec3& position, QUADrender_param& render_d
 void renderer2d::draw_quad(const glm::mat4& transform, QUADrender_param& render_data)
 {
 	//send it off to the render manager
-	render_object quad;
-	quad.type = render_type::QUAD;
-	quad.transform = transform;
-	quad.color = render_data.color;
-	quad.Texture = render_data.Texture;
-	quad.tiling_factor = render_data.tiling_factor;
-	quad.layer = render_data.layer;
+	std::shared_ptr<render_object>quad(new render_object);
+	quad->type = render_type::QUAD;
+	quad->transform = transform;
+	quad->color = render_data.color;
+	quad->Texture = render_data.Texture;
+	quad->tiling_factor = render_data.tiling_factor;
+	quad->layer = render_data.layer;
 
 	Rendering_manager::submit_queue_object(quad);
 }
@@ -280,7 +283,7 @@ renderer2d::Statistics renderer2d::get_stats()
 float renderer2d::get_texture_index(std::string texture)
 {
 	
-	float texture_index = 0.0f;
+	float texture_index = -1.0f;
 	for (uint32_t i = 0; i < s_data.CurrentSlotIndex; i++)
 	{
 		if (s_data.texture_slots[i] == texture)
@@ -290,11 +293,11 @@ float renderer2d::get_texture_index(std::string texture)
 		}
 	}
 
-	if (texture_index == 0.0f)
+	if (texture_index == -1.0f)
 	{
 		if (s_data.CurrentSlotIndex >= s_data.max_texture_slots)
 		{
-			//Next_Batch();
+			Next_Batch();
 		}
 
 		texture_index = (float)s_data.CurrentSlotIndex;
@@ -338,6 +341,40 @@ void renderer2d::Unbind_Texture(std::string texture, uint32_t slot)
 	else
 	{
 		Log::warning("Trying to unbind a texture that isnt bound");
+	}
+}
+
+void renderer2d::draw()
+{
+	Start_Batch();
+	while (!Rendering_manager::get_finished())
+	{
+		auto draw_calls = Rendering_manager::flush();
+		if (!draw_calls.empty())
+		{
+			for (int i = 0; i < draw_calls.size(); i++)
+			{
+				switch (draw_calls[i]->type)
+				{
+				case render_type::QUAD:
+					m_draw_quad(*draw_calls[i]);
+					break;
+				case render_type::CIRCLE:
+					//m_draw_circle(*draw_calls[i]);
+					break;
+				case render_type::LINE:
+					//m_draw_line(*draw_calls[i]);
+					break;
+				case render_type::TEXT:
+					//m_draw_text(*draw_calls[i]);
+					break;
+				default:
+					Log::warning("UNKNOWN DRAW TYPE");
+					break;
+				}
+			}
+			Next_Batch();
+		}
 	}
 }
 
@@ -422,7 +459,7 @@ void renderer2d::m_draw_quad(render_object& quad_obj)
 
 	if (s_data.Quad_index_count + 6 >= s_data.max_indicies + 1)
 	{
-		//NextBatch();
+		Next_Batch();
 	}
 
 	for (size_t i = 0; i < quad_vertex_count; i++)

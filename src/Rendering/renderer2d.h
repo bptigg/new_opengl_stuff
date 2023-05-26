@@ -9,11 +9,10 @@ struct render_object;
 
 struct QUADrender_param
 {
-	const glm::vec2 size = glm::vec2(0.0f);
+	glm::vec2 size = glm::vec2(0.0f);
 	glm::vec4 color = glm::vec4(1.0f);
 	std::string Texture = "";
 	float tiling_factor = 1.0f;
-	const glm::vec4 tint_color = glm::vec4(1.0f);
 	float rotation = 0.0f;
 
 	int layer = 0; // z depth 
@@ -50,18 +49,19 @@ public:
 	static void Begin_Scene();
 	static void End_Scene();
 	static void Flush();
+	static void draw();
 
 	//Primative types
 	static void draw_quad(const glm::vec2& posiiton, QUADrender_param& render_data);
-	static void draw_qaud(const glm::vec3& position, QUADrender_param& render_data);
+	static void draw_quad(const glm::vec3& position, QUADrender_param& render_data);
 	static void draw_quad(const glm::mat4& transform, QUADrender_param& render_data);
 
 	static void draw_circle(CIRCLErender_param& render_data);
 	static void draw_line(LINErender_param& render_data);
 
-	static void update_quad_shader(std::string shader);
-	static void update_circle_shader(std::string shader);
-	static void update_line_shader(std::string shader);
+	//static void update_quad_shader(std::string shader);
+	//static void update_circle_shader(std::string shader);
+	//static void update_line_shader(std::string shader);
 
 
 public:
