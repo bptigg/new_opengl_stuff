@@ -65,6 +65,7 @@ public:
 	static void submit_queue_object(std::shared_ptr<render_object>& object);
 	static std::vector<std::shared_ptr<render_object>> flush();
 	static bool get_finished();
+	static void reset();
 
 };
 

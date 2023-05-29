@@ -8,6 +8,12 @@ Vertex_Array::Vertex_Array()
 
 Vertex_Array::~Vertex_Array()
 {
+	if (!va_shutdown) { GlCall(glDeleteVertexArrays(1, &m_renderer_id)) };
+}
+
+void Vertex_Array::shutdown()
+{
+	va_shutdown = true;
 	GlCall(glDeleteVertexArrays(1, &m_renderer_id));
 }
 

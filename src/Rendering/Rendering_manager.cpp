@@ -35,6 +35,7 @@ void Rendering_manager::submit_queue_object(std::shared_ptr<render_object>& obje
 {
 	//s_data->m_objects.push_back(object);
 	s_data->queue.push(object);
+	s_data->finished = false;
 }
 
 std::vector<std::shared_ptr<render_object>> Rendering_manager::flush()
@@ -54,6 +55,7 @@ std::vector<std::shared_ptr<render_object>> Rendering_manager::flush()
 	if (s_data->active_layer_index == s_data->queue.m_active_layers.size())
 	{
 		s_data->finished = true;
+		//s_data->queue.reset_queue();
 		return {};
 	}
 
@@ -88,7 +90,7 @@ void render_queue::push(std::shared_ptr<render_object>& object)
 		m_active_layers.push_back(object->layer);
 	}
 
-	if (m_queue[object->layer].find(object->Texture) == m_queue[object->layer].end())
+	if (std::find(m_active_textures.begin(), m_active_textures.end(), object->Texture) == m_active_textures.end())
 	{
 		m_active_textures.push_back(object->Texture);
 	}
@@ -107,6 +109,9 @@ void render_queue::reset_queue()
 		it->second.clear();
 	}
 	m_queue.clear();
+
+	m_active_layers.clear();
+	m_active_textures.clear();
 	
 	s_data->num_layers = 0;
 	s_data->num_textures = 0;
@@ -117,4 +122,9 @@ void render_queue::reset_queue()
 bool Rendering_manager::get_finished()
 {
 	return s_data->finished;
+}
+
+void Rendering_manager::reset()
+{
+	s_data->queue.reset_queue();
 }

@@ -12,6 +12,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <array>
+#include <cmath>
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -198,6 +199,17 @@ void renderer2d::Init()
 	}
 
 	//Load shaders
+	s_ShaderLibrary->Load("test", "test.shader");
+	s_data.Quad_shader = s_ShaderLibrary->get("test");
+
+	//temp thing 
+
+	glm::mat4 mvp = glm::ortho(0.0f, 1280.0f, 0.0f, 720.0f, -1.0f, 1.0f);
+	glm::mat4 transform = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 0));
+
+	s_data.Quad_shader->set_uniform_mat_4f("u_view_proj", mvp);
+	s_data.Quad_shader->set_uniform_mat_4f("u_transform", transform);
+	
 
 	s_data.Quad_Vertex_Positions[0] = { -0.5f, -0.5f, 0.0f, 1.0f };
 	s_data.Quad_Vertex_Positions[1] = {  0.5f, -0.5f, 0.0f, 1.0f };
@@ -210,6 +222,16 @@ void renderer2d::Shutdown()
 	delete s_TexLibary;
 	delete s_SubTexLibrary;
 	delete s_ShaderLibrary;
+
+	s_data.Quad_IB->shutdown();
+	s_data.Quad_VB->shutdown();
+	s_data.Qaud_VA0->shutdown();
+
+	s_data.Circle_VB->shutdown();
+	s_data.Circle_VA0->shutdown();
+
+	s_data.Line_VB->shutdown();
+	s_data.Line_VA0->shutdown();
 
 	Rendering_manager::Shutdown();
 
@@ -239,7 +261,7 @@ void renderer2d::draw_quad(const glm::vec3& position, QUADrender_param& render_d
 	}
 	else
 	{
-		render_data.rotation = (render_data.rotation > 2 * glm::pi<float>()) ? glm::radians(render_data.rotation) : render_data.rotation;
+		render_data.rotation = (render_data.rotation > 2 * glm::pi<float>()) ? std::fmod(render_data.rotation,glm::pi<float>()) : render_data.rotation;
 		transform = glm::translate(glm::mat4(1.0f), position) 
 				  * glm::rotate(glm::mat4(1.0f), render_data.rotation, {0.0f, 0.0f,1.0f})
 				  * glm::scale(glm::mat4(1.0f), { render_data.size.x, render_data.size.y, 1.0f });
@@ -255,7 +277,7 @@ void renderer2d::draw_quad(const glm::mat4& transform, QUADrender_param& render_
 	quad->type = render_type::QUAD;
 	quad->transform = transform;
 	quad->color = render_data.color;
-	quad->Texture = render_data.Texture;
+	quad->Texture = (render_data.Texture != "") ? render_data.Texture : "s_white";
 	quad->tiling_factor = render_data.tiling_factor;
 	quad->layer = render_data.layer;
 
@@ -376,6 +398,7 @@ void renderer2d::draw()
 			Next_Batch();
 		}
 	}
+	Rendering_manager::reset();
 }
 
 void renderer2d::Flush()
@@ -494,4 +517,20 @@ void renderer2d::Start_Batch()
 	s_data.LineVertexBufferPtr = s_data.LineVertexBufferBase;
 
 	s_data.CurrentSlotIndex = 1;
+}
+
+void renderer2d::clear()
+{
+	GlCall(glClear(GL_COLOR_BUFFER_BIT));
+}
+
+void renderer2d::enable_blending()
+{
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+}
+
+void renderer2d::disable_blending()
+{
+	glDisable(GL_BLEND);
 }

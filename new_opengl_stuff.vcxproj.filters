@@ -153,4 +153,9 @@
       <Filter>Source Files\Core</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="test.shader">
+      <Filter>Resource Files</Filter>
+    </None>
+  </ItemGroup>
 </Project>

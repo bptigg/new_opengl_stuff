@@ -50,6 +50,7 @@ public:
 	static void End_Scene();
 	static void Flush();
 	static void draw();
+	static void clear();
 
 	//Primative types
 	static void draw_quad(const glm::vec2& posiiton, QUADrender_param& render_data);
@@ -76,6 +77,9 @@ public:
 
 	static void reset_stats();
 	static Statistics get_stats();
+
+	static void enable_blending();
+	static void disable_blending();
 
 private:
 

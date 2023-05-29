@@ -15,8 +15,8 @@ namespace Utility
 			if (vec[j] < pivot)
 			{
 				i++;
+				std::swap(vec[i], vec[j]);
 			}
-			std::swap(vec[i], vec[j]);
 		}
 		std::swap(vec[i + 1], vec[high]);
 		return (i + 1);

@@ -79,7 +79,6 @@ GLuint Texture::Create_Texture(unsigned int width, unsigned height, unsigned cha
 
 void Texture::delete_texture(unsigned int id)
 {
-	Log::variable<unsigned int>("Texture deleted: ", id);
 	GlCall(glDeleteTextures(1, &id));
 }
 
@@ -98,6 +97,17 @@ void Texture::unbind(unsigned int slot)
 {
 	GlCall(glActiveTexture(GL_TEXTURE0 + slot));
 	GlCall(glBindTexture(GL_TEXTURE_2D, 0));
+}
+
+Texture_Library::~Texture_Library()
+{
+	for (auto it = m_textures.begin(); it != m_textures.end(); it++)
+	{
+		Texture::delete_texture(it->second->texture_id);
+		it->second->alive = false;
+		Log::variable<const std::string>("Texture deleted: ", it->first);
+	}
+	m_textures.clear();
 }
 
 void Texture_Library::Add(const std::string& name, std::shared_ptr<Texture_Data>& data)
