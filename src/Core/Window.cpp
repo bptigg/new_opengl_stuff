@@ -22,8 +22,8 @@ static void GLFWErrorCallback(int error, const char* description)
 
 void Window::On_Update()
 {
-	glfwPollEvents();
 	glfwSwapBuffers(m_window);
+	glfwPollEvents();
 }
 
 unsigned int Window::Get_Width() const
@@ -80,6 +80,10 @@ void Window::Init(const properties& props)
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	
+	//here until I remove it because framebuffers;
+	glfwWindowHint(GLFW_SAMPLES, 4);
+	glEnable(GL_MULTISAMPLE);
 
 	m_window = glfwCreateWindow((int)props.m_width, (int)props.m_height, props.m_name.c_str(), nullptr, nullptr);
 

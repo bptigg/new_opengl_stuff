@@ -4,6 +4,12 @@
 
 #include "../Rendering/renderer2d.h"
 
+#include "../Rendering/Framebuffer.h"
+
+#define _USE_MATH_DEFINES
+#include <math.h>
+
+
 #define BIND_EVENT_FN(x) std::bind(&x, this, std::placeholders::_1)
 
 Application* Application::s_instance = nullptr;
@@ -53,18 +59,106 @@ void Application::on_event(Events::Event& e)
 
 void Application::Run()
 {
+	renderer2d::enable_blending();
+
+	//temp code
+	float old_1 = 0, old_2 = 0, old_3 = 0;
+	Framebufferspec fbspec;
+	fbspec.Attachments = { FramebufferTextureFormat::RGBA8, FramebufferTextureFormat::RED_INTEGER, FramebufferTextureFormat::Depth };
+	fbspec.width = 1280;
+	fbspec.height = 720;
+	auto framebuffer = Framebuffer::Create(fbspec);
+
+	std::shared_ptr<Texture_Data> screen = std::make_shared<Texture_Data>(Texture_Data());
+	screen->texture_id = framebuffer->get_color_attachment_renderer_id();
+	screen->size = { framebuffer->GetSpec().width, framebuffer->GetSpec().height };
+	screen->bound = false;
+	screen->slot = 0;
+	screen->alive = true;
+
+	std::string screen_name = "m_screen";
+	renderer2d::get_texture_library()->Add(screen_name, screen);
+	renderer2d::get_subtexture_library()->create("s_screen", screen_name, *screen, { 0,0 }, { screen->size.x, screen->size.y }, { 1,1 });
+
+	QUADrender_param pic;
+	pic.color = { 1.0f, 1.0f, 1.0f, 1.0f };
+	pic.layer = 1;
+	pic.size = { 1280.0f, 720.0f };
+	pic.rotation = 0;
+	pic.Texture = "s_screen";
+
+
 	while (m_running)
 	{
+		renderer2d::clear();
+
 		float c_time = glfwGetTime();
 		Timestep time = c_time - m_last_frame_time;
 		m_last_frame_time = c_time;
 
 		if (!m_minimized)
 		{
+			CIRCLErender_param test_2;
+			test_2.color = { 0.4f, 0.3f, 0.7f, 1.0f };
+			test_2.thickness = 0.5f;
+			test_2.fade = 0.005f;
+			test_2.layer = 1;
+
+			glm::vec3 translation = { 720.0f, 480.0f, 1.0f };
+			glm::vec3 scale = { 30.0f, 30.0f, 1.0f };
+
+			glm::mat4 transform = glm::translate(glm::mat4(1.0f), translation) * glm::scale(glm::mat4(1.0f), scale);
+			test_2.transform = transform;
+
+			renderer2d::draw_circle(test_2);
+
+			QUADrender_param test;
+			test.color = { 0.5f, 0.2f, 0.3f, 1.0f };
+			test.layer = 1;
+			test.size = {60.0f, 60.0f };
+			test.rotation = old_1 + 0.4 * time;
+			old_1 = test.rotation;
+			test.Texture = "";
+
+			renderer2d::draw_quad({ 640.0f , 360.0f }, test);
+
+			test.color = { 0.6f, 0.8f, 0.2f, 0.8f };
+			test.layer = 2;
+			test.size = { 100.0f, 53.0f };
+			test.rotation = old_2 + 0.2 * time;
+			old_2 = test.rotation;
+			test.Texture = "";
+
+			renderer2d::draw_quad({ 400.0f , 100.0f }, test);
+
+			test.color = { 0.0f, 0.0f, 1.0f, 0.2f };
+			test.layer = 3;
+			test.size = { 30.0f, 30.0f };
+			test.rotation = old_3 + 1*time;
+			old_3 = test.rotation;
+			test.Texture = "";
+
+			renderer2d::draw_quad({ 640.0f , 360.0f }, test);
+
+			framebuffer->Bind();
+			framebuffer->clear_attachment(0, -1);
+			framebuffer->clear_attachment(1, -1);
+			glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+			renderer2d::draw();
+
+			framebuffer->Unbind();
+
+			renderer2d::get_texture_library()->get("m_screen")->texture_id = framebuffer->get_color_attachment_renderer_id();
+
+			framebuffer->Unbind();
+
+			renderer2d::draw_quad({ 640.0f, 360.0f }, pic);
+			renderer2d::draw();
 
 		}
 		m_window->On_Update();
 	}
+	return;
 }
 
 bool Application::on_window_close(Events::Window_Close_Event& e)

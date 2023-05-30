@@ -38,6 +38,9 @@ public:
 class Texture_Library
 {
 public:
+
+	~Texture_Library();
+
 	void Add(const std::string& name, std::shared_ptr<Texture_Data>& data);
 	
 	std::shared_ptr<Texture_Data> Load(std::string& name, std::string& filepath);

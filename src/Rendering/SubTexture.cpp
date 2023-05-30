@@ -16,6 +16,11 @@ std::shared_ptr<SubTexture> SubTexture::create_from_coords(const std::string& pa
 	return std::shared_ptr<SubTexture>(new SubTexture(parent_name, min, max, true));
 }
 
+SubTexture_Library::~SubTexture_Library()
+{
+	m_SubTextures.clear();
+}
+
 void SubTexture_Library::Add(const std::string& name, const std::shared_ptr<SubTexture>& sub_texture)
 {
 	if (!sub_texture_exists(name)) { Log::crit("Texture already exsits in library", __FILE__, __LINE__); }

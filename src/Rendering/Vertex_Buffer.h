@@ -7,11 +7,14 @@ private:
 	uint32_t m_renderer_id;
 	bool is_dynamic;
 	int m_offset = 0;
+	bool vb_shutdown = false;
 	uint32_t m_buffer_size;
 public:
 	Vertex_Buffer(const void* data, uint32_t size);
 	Vertex_Buffer(uint32_t size);
 	~Vertex_Buffer();
+
+	void shutdown();
 
 	void bind() const;
 	void unbind() const;

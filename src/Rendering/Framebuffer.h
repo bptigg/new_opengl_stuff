@@ -84,4 +84,7 @@ private:
 
 	std::vector<uint32_t> m_color_attachments;
 	uint32_t m_depth_attachment = 0;
+
+public:
+	uint32_t get_id() { return m_renderer_id; }
 };

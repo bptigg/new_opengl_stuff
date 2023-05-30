@@ -2,8 +2,8 @@
 
 #include "Vertex.h"
 #include "Rendering_manager.h"
-#include "SubTexture.h"
-#include "Shader.h"
+//#include "SubTexture.h"
+//#include "Shader.h"
 
 #include "Vertex_Array.h"
 #include "Index_Buffer.h"
@@ -12,6 +12,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <array>
+#include <cmath>
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -86,6 +87,7 @@ void renderer2d::Init()
 	s_TexLibary = new Texture_Library;
 	s_SubTexLibrary = new SubTexture_Library;
 	s_ShaderLibrary = new Shader_Library;
+	Rendering_manager::Init();
 
 	GLint max_slots;
 	glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &max_slots);
@@ -190,13 +192,30 @@ void renderer2d::Init()
 	s_SubTexLibrary->create("s_white", white_name, *white, { 0,0 }, { 1,1 }, { 1,1 });
 	s_data.texture_slots[0] = white_name;
 
-	int32_t samplers[MAX_TEXTURE_SLOTS];
-	for (uint32_t i = 0; i < MAX_TEXTURE_SLOTS; i++)
+	int samplers[MAX_TEXTURE_SLOTS];
+	for (int i = 0; i < MAX_TEXTURE_SLOTS; i++)
 	{
 		samplers[i] = i;
 	}
 
 	//Load shaders
+	s_ShaderLibrary->Load("Quad", "res/shaders/Quad.shader");
+	s_data.Quad_shader = s_ShaderLibrary->get("Quad");
+
+	s_ShaderLibrary->Load("Circle", "res/shaders/Circle.shader");
+	s_data.Circle_shader = s_ShaderLibrary->get("Circle");
+
+	//temp thing 
+
+	glm::mat4 mvp = glm::ortho(0.0f, 1280.0f, 0.0f, 720.0f, -1.0f, 1.0f);
+	glm::mat4 transform = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 0));
+
+	s_data.Quad_shader->set_uniform_mat_4f("u_view_proj", mvp);
+	s_data.Quad_shader->set_uniform_mat_4f("u_transform", transform);
+	s_data.Quad_shader->set_uniform_1iv("u_textures", 32, samplers);
+
+	s_data.Circle_shader->set_uniform_mat_4f("u_view_proj", mvp);
+	
 
 	s_data.Quad_Vertex_Positions[0] = { -0.5f, -0.5f, 0.0f, 1.0f };
 	s_data.Quad_Vertex_Positions[1] = {  0.5f, -0.5f, 0.0f, 1.0f };
@@ -209,6 +228,18 @@ void renderer2d::Shutdown()
 	delete s_TexLibary;
 	delete s_SubTexLibrary;
 	delete s_ShaderLibrary;
+
+	s_data.Quad_IB->shutdown();
+	s_data.Quad_VB->shutdown();
+	s_data.Qaud_VA0->shutdown();
+
+	s_data.Circle_VB->shutdown();
+	s_data.Circle_VA0->shutdown();
+
+	s_data.Line_VB->shutdown();
+	s_data.Line_VA0->shutdown();
+
+	Rendering_manager::Shutdown();
 
 	//delete s_data.Quad_IB;
 }
@@ -223,10 +254,10 @@ void renderer2d::End_Scene()
 
 void renderer2d::draw_quad(const glm::vec2& position, QUADrender_param& render_data)
 {
-	renderer2d::draw_qaud({ position.x, position.y, 0.0f }, render_data);
+	renderer2d::draw_quad({ position.x, position.y, 0.0f }, render_data);
 }
 
-void renderer2d::draw_qaud(const glm::vec3& position, QUADrender_param& render_data)
+void renderer2d::draw_quad(const glm::vec3& position, QUADrender_param& render_data)
 {
 	glm::mat4 transform = glm::mat4(1.0f);
 	if (render_data.rotation == 0.0f)
@@ -236,7 +267,7 @@ void renderer2d::draw_qaud(const glm::vec3& position, QUADrender_param& render_d
 	}
 	else
 	{
-		render_data.rotation = (render_data.rotation > 2 * glm::pi<float>()) ? glm::radians(render_data.rotation) : render_data.rotation;
+		render_data.rotation = (render_data.rotation > 2 * glm::pi<float>()) ? std::fmod(render_data.rotation,glm::pi<float>()) : render_data.rotation;
 		transform = glm::translate(glm::mat4(1.0f), position) 
 				  * glm::rotate(glm::mat4(1.0f), render_data.rotation, {0.0f, 0.0f,1.0f})
 				  * glm::scale(glm::mat4(1.0f), { render_data.size.x, render_data.size.y, 1.0f });
@@ -248,19 +279,29 @@ void renderer2d::draw_qaud(const glm::vec3& position, QUADrender_param& render_d
 void renderer2d::draw_quad(const glm::mat4& transform, QUADrender_param& render_data)
 {
 	//send it off to the render manager
-	render_object quad;
-	quad.type = render_type::QUAD;
-	quad.transform = transform;
-	quad.color = render_data.color;
-	quad.Texture = render_data.Texture;
-	quad.tiling_factor = render_data.tiling_factor;
-	quad.layer = render_data.layer;
+	std::shared_ptr<render_object>quad(new render_object);
+	quad->type = render_type::QUAD;
+	quad->transform = transform;
+	quad->color = render_data.color;
+	quad->Texture = (render_data.Texture != "") ? render_data.Texture : "s_white";
+	quad->tiling_factor = render_data.tiling_factor;
+	quad->layer = render_data.layer;
 
 	Rendering_manager::submit_queue_object(quad);
 }
 
 void renderer2d::draw_circle(CIRCLErender_param& render_data)
 {
+	std::shared_ptr<render_object>circle(new render_object);
+	circle->type = render_type::CIRCLE;
+	circle->transform = render_data.transform;
+	circle->color = render_data.color;
+	circle->thickness = render_data.thickness;
+	circle->fade = render_data.fade;
+	circle->Texture = "s_white";
+	circle->layer = render_data.layer;
+
+	Rendering_manager::submit_queue_object(circle);
 }
 
 void renderer2d::draw_line(LINErender_param& render_data)
@@ -280,7 +321,7 @@ renderer2d::Statistics renderer2d::get_stats()
 float renderer2d::get_texture_index(std::string texture)
 {
 	
-	float texture_index = 0.0f;
+	float texture_index = -1.0f;
 	for (uint32_t i = 0; i < s_data.CurrentSlotIndex; i++)
 	{
 		if (s_data.texture_slots[i] == texture)
@@ -290,11 +331,11 @@ float renderer2d::get_texture_index(std::string texture)
 		}
 	}
 
-	if (texture_index == 0.0f)
+	if (texture_index == -1.0f)
 	{
 		if (s_data.CurrentSlotIndex >= s_data.max_texture_slots)
 		{
-			//Next_Batch();
+			Next_Batch();
 		}
 
 		texture_index = (float)s_data.CurrentSlotIndex;
@@ -310,14 +351,16 @@ void renderer2d::Bind_Texture(std::string texture, uint32_t slot)
 	std::shared_ptr<Texture_Data> data = s_TexLibary->get(texture);
 	if (data->bound == false)
 	{
-		Texture::bind(data->texture_id, slot);
+		//Texture::bind(data->texture_id, slot);
+		glBindTextureUnit(slot, data->texture_id);
 		data->bound = true;
 		data->slot = slot;
 	}
 	else if (data->bound == true && slot != data->slot)
 	{
 		Texture::unbind(data->slot);
-		Texture::bind(data->texture_id, slot);
+		//Texture::bind(data->texture_id, slot);
+		glBindTextureUnit(slot, data->texture_id);
 		data->slot = slot;
 	}
 }
@@ -339,6 +382,41 @@ void renderer2d::Unbind_Texture(std::string texture, uint32_t slot)
 	{
 		Log::warning("Trying to unbind a texture that isnt bound");
 	}
+}
+
+void renderer2d::draw()
+{
+	Start_Batch();
+	while (!Rendering_manager::get_finished())
+	{
+		auto draw_calls = Rendering_manager::flush();
+		if (!draw_calls.empty())
+		{
+			for (int i = 0; i < draw_calls.size(); i++)
+			{
+				switch (draw_calls[i]->type)
+				{
+				case render_type::QUAD:
+					m_draw_quad(*draw_calls[i]);
+					break;
+				case render_type::CIRCLE:
+					m_draw_circle(*draw_calls[i]);
+					break;
+				case render_type::LINE:
+					//m_draw_line(*draw_calls[i]);
+					break;
+				case render_type::TEXT:
+					//m_draw_text(*draw_calls[i]);
+					break;
+				default:
+					Log::warning("UNKNOWN DRAW TYPE");
+					break;
+				}
+			}
+			Next_Batch();
+		}
+	}
+	Rendering_manager::reset();
 }
 
 void renderer2d::Flush()
@@ -422,7 +500,7 @@ void renderer2d::m_draw_quad(render_object& quad_obj)
 
 	if (s_data.Quad_index_count + 6 >= s_data.max_indicies + 1)
 	{
-		//NextBatch();
+		Next_Batch();
 	}
 
 	for (size_t i = 0; i < quad_vertex_count; i++)
@@ -436,6 +514,29 @@ void renderer2d::m_draw_quad(render_object& quad_obj)
 	}
 
 	s_data.Quad_index_count += 6;
+	s_data.stats.QuadCount++;
+}
+
+void renderer2d::m_draw_circle(render_object& circle_obj)
+{
+	constexpr size_t circle_vertex_count = 4;
+
+	if (s_data.Quad_index_count + 6 >= s_data.max_indicies + 1)
+	{
+		Next_Batch();
+	}
+
+	for (size_t i = 0; i < circle_vertex_count; i++)
+	{
+		s_data.CircleVertexBufferPtr->WorldPosition = circle_obj.transform * s_data.Quad_Vertex_Positions[i];
+		s_data.CircleVertexBufferPtr->LocalPosition = s_data.Quad_Vertex_Positions[i] * 2.0f;
+		s_data.CircleVertexBufferPtr->Colour = circle_obj.color;
+		s_data.CircleVertexBufferPtr->thickness = circle_obj.thickness;
+		s_data.CircleVertexBufferPtr->fade = circle_obj.fade;
+		s_data.CircleVertexBufferPtr++;
+	}
+
+	s_data.Circle_index_count += 6;
 	s_data.stats.QuadCount++;
 }
 
@@ -457,4 +558,35 @@ void renderer2d::Start_Batch()
 	s_data.LineVertexBufferPtr = s_data.LineVertexBufferBase;
 
 	s_data.CurrentSlotIndex = 1;
+}
+
+void renderer2d::clear()
+{
+	GlCall(glClear(GL_COLOR_BUFFER_BIT));
+}
+
+void renderer2d::enable_blending()
+{
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+}
+
+void renderer2d::disable_blending()
+{
+	glDisable(GL_BLEND);
+}
+
+SubTexture_Library* renderer2d::get_subtexture_library()
+{
+	return s_SubTexLibrary;
+}
+
+Texture_Library* renderer2d::get_texture_library()
+{
+	return s_TexLibary;
+}
+
+Shader_Library* renderer2d::get_shader_library()
+{
+	return s_ShaderLibrary;
 }

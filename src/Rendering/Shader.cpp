@@ -7,10 +7,17 @@ shader::shader(const std::string& filepath, std::string name)
 {
     shader_source source = parse_shader(filepath);
     m_renderer_id = create_shader(source.vertex_source, source.fragment_source);
+    s_shutdown = false;
 }
 
 shader::~shader()
 {
+    if (!s_shutdown) { GlCall(glDeleteProgram(m_renderer_id)) };
+}
+
+void shader::shutdown()
+{
+    s_shutdown = true;
     GlCall(glDeleteProgram(m_renderer_id));
 }
 
@@ -206,6 +213,15 @@ unsigned int shader::get_uniform_location(const std::string& name)
     }
     m_uniform_cache[name] = location;
     return location;
+}
+
+Shader_Library::~Shader_Library()
+{
+    for (auto it = m_shaders.begin(); it != m_shaders.end(); it++)
+    {
+        it->second->shutdown();
+    }
+    m_shaders.clear();
 }
 
 void Shader_Library::Add(const std::string& name, const std::shared_ptr<shader>& shader)

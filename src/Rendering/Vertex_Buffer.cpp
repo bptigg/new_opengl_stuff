@@ -7,6 +7,7 @@ Vertex_Buffer::Vertex_Buffer(const void* data, uint32_t size)
     GlCall(glGenBuffers(1, &m_renderer_id));
     GlCall(glBindBuffer(GL_ARRAY_BUFFER, m_renderer_id));
     GlCall(glBufferData(GL_ARRAY_BUFFER, size, data, GL_STATIC_DRAW));
+    vb_shutdown = false;
 }
 
 Vertex_Buffer::Vertex_Buffer(uint32_t size)
@@ -15,11 +16,18 @@ Vertex_Buffer::Vertex_Buffer(uint32_t size)
     GlCall(glGenBuffers(1, &m_renderer_id));
     GlCall(glBindBuffer(GL_ARRAY_BUFFER, m_renderer_id));
     GlCall(glBufferData(GL_ARRAY_BUFFER, size, nullptr, GL_DYNAMIC_DRAW));
+    vb_shutdown = false;
 }
 
 
 Vertex_Buffer::~Vertex_Buffer()
 {
+    if (!vb_shutdown) { GlCall(glDeleteBuffers(1, &m_renderer_id)) };
+}
+
+void Vertex_Buffer::shutdown()
+{
+    vb_shutdown = true;
     GlCall(glDeleteBuffers(1, &m_renderer_id));
 }
 

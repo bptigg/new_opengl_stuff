@@ -25,6 +25,9 @@ private:
 class SubTexture_Library
 {
 public:
+
+	~SubTexture_Library();
+
 	void Add(const std::string& name, const std::shared_ptr<SubTexture>& sub_texture);
 	void Add(const std::shared_ptr<SubTexture>& false_sub_texture); //used for false sub textures where the the sub texture is the og texture
 
