@@ -5,6 +5,9 @@
 
 #include <string>
 
+#include "SubTexture.h"
+#include "Shader.h"
+
 struct render_object;
 
 struct QUADrender_param
@@ -20,8 +23,8 @@ struct QUADrender_param
 
 struct CIRCLErender_param
 {
-	const glm::mat4 transform;
-	const glm::vec4 color;
+	glm::mat4 transform;
+	glm::vec4 color;
 	float thickness = 1.0f;
 	float fade = 0.005f;
 
@@ -30,9 +33,9 @@ struct CIRCLErender_param
 
 struct LINErender_param
 {
-	const glm::vec3 p0;
-	const glm::vec3 p1;
-	const glm::vec4 color;
+	glm::vec3 p0;
+	glm::vec3 p1;
+	glm::vec4 color;
 
 	int layer = 0;
 };
@@ -81,10 +84,14 @@ public:
 	static void enable_blending();
 	static void disable_blending();
 
+	static SubTexture_Library* get_subtexture_library();
+	static Texture_Library* get_texture_library();
+	static Shader_Library* get_shader_library();
+
 private:
 
 	static float get_texture_index(std::string texture);
-	
+
 	static void Bind_Texture(std::string texture, uint32_t slot);
 	static void Unbind_Texture(std::string texture, uint32_t slot);
 
@@ -94,6 +101,7 @@ private:
 
 
 	static void m_draw_quad(render_object& quad_obj);
+	static void m_draw_circle(render_object& circle_obj);
 
 	static void Next_Batch();
 	static void Start_Batch();

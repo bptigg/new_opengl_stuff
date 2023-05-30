@@ -92,6 +92,18 @@ namespace Utils {
 Framebuffer::Framebuffer(const Framebufferspec& spec)
     :m_specification(spec)
 {
+    for (auto spec : m_specification.Attachments.Attachments)
+    {
+        if (!Utils::Is_depth_format(spec.TextureFormat))
+        {
+            m_color_attachment_specifications.emplace_back(spec);
+        }
+        else
+        {
+            m_depth_attachment_specfication = spec;
+        }
+    }
+
     Invalidate();
 }
 
@@ -112,7 +124,7 @@ void Framebuffer::Invalidate()
         m_depth_attachment = 0;
     }
 
-    GlCall(glCreateFramebuffers(1, &m_renderer_id));
+    GlCall(glGenFramebuffers(1, &m_renderer_id));
     GlCall(glBindFramebuffer(GL_FRAMEBUFFER, m_renderer_id));
 
     bool multisample = m_specification.samples > 1;
@@ -155,14 +167,15 @@ void Framebuffer::Invalidate()
     if (m_color_attachments.size() > 1)
     {
         GLenum buffers[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
-        glDrawBuffers(m_color_attachments.size(), buffers);
+
+        GlCall(glDrawBuffers(m_color_attachments.size(), buffers));
     }
     else if (m_color_attachments.empty())
     {
         glDrawBuffer(GL_NONE);
     }
 
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
     {
         Log::crit("Framebuffer is incomplete", __FILE__, __LINE__);
     }
@@ -172,7 +185,8 @@ void Framebuffer::Invalidate()
 
 void Framebuffer::Bind()
 {
-    glBindFramebuffer(GL_FRAMEBUFFER, m_renderer_id);
+    GlCall(glBindFramebuffer(GL_FRAMEBUFFER, m_renderer_id));
+    glViewport(0, 0, m_specification.width, m_specification.height);
 }
 
 void Framebuffer::Unbind()
@@ -211,5 +225,5 @@ void Framebuffer::clear_attachment(uint32_t attachment_index, int value)
 
 std::shared_ptr<Framebuffer> Framebuffer::Create(const Framebufferspec& spec)
 {
-    return std::make_shared<Framebuffer>(spec);
+    return std::shared_ptr<Framebuffer>(new Framebuffer(spec));
 }
