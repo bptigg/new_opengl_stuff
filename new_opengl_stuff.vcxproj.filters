@@ -22,6 +22,9 @@
     <Filter Include="Source Files\Events">
       <UniqueIdentifier>{701cfb35-59b2-4b50-bb57-37001bb56ab2}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Layers">
+      <UniqueIdentifier>{bb24ef0a-56e6-438b-9d41-9180c15b94cb}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Rendering\Index_Buffer.cpp">
@@ -74,6 +77,15 @@
     </ClCompile>
     <ClCompile Include="src\utilities\utility.cpp">
       <Filter>Source Files\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Layers\LayerStack.cpp">
+      <Filter>Source Files\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Layers\Layer.cpp">
+      <Filter>Source Files\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Layers\GameLayer.cpp">
+      <Filter>Source Files\Layers</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -151,6 +163,15 @@
     </ClInclude>
     <ClInclude Include="src\utilities\utility.h">
       <Filter>Source Files\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Layers\LayerStack.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Layers\Layer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Layers\GameLayer.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

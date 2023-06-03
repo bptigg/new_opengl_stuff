@@ -74,7 +74,9 @@ std::vector<std::shared_ptr<render_object>> Rendering_manager::flush()
 		}
 	}
 
-	if (s_data->active_texture_index + 1 >= s_data->queue.m_active_textures.size())
+	s_data->active_texture_index++;
+
+	if (s_data->active_texture_index >= objects.size())
 	{
 		s_data->active_layer_index++;
 		s_data->active_texture_index = 0;

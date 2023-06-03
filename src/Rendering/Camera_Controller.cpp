@@ -1,18 +1,20 @@
 #include "Camera_Controller.h"
 
 
-Camera_Controller::Camera_Controller(float aspect_ratio, bool rotation)
-	:m_aspect_ratio(aspect_ratio), m_camera(-m_aspect_ratio * m_zoom_level, m_aspect_ratio * m_zoom_level, -m_zoom_level, m_zoom_level)
+Camera_Controller::Camera_Controller(int width, int height, bool rotation)
+	:m_aspect_ratio((float)width / (float)height), m_camera(-width / 2.0f * m_zoom_level, width / 2.0f * m_zoom_level, -height / 2.0f * m_zoom_level, height / 2.0f * m_zoom_level)
 {
 	m_rotation = rotation;
-	m_camera_translation_speed = 10.0f;
+	m_camera_translation_speed = 100.0f;
 	m_block = false;
+	m_resolution = { width, height };
 }
 
 void Camera_Controller::On_Update(Timestep ts)
 {
 	m_camera.Set_Position(m_camera_position);
-	m_camera_translation_speed = m_zoom_level;
+	m_camera_translation_speed = 100.0f * m_zoom_level;
+	m_frame_time = ts;
 	//m_camera_translation_speed = 100.0f;
 	//m_camera_translation_speed = m_zoom_level * m_camera_translation_speed;
 	//m_frame_time = ts;
@@ -77,8 +79,9 @@ void Camera_Controller::On_Event(Events::Event& e)
 
 void Camera_Controller::OnResize(float width, float height)
 {
-	m_aspect_ratio = width / height;
-	m_camera.set_projection(-m_aspect_ratio * m_zoom_level, m_aspect_ratio * m_zoom_level, -m_zoom_level, m_zoom_level);
+	//m_aspect_ratio = width / height;
+	m_camera.set_projection(-width/2.0f * m_zoom_level, width/2.0f * m_zoom_level, -height/2.0f * m_zoom_level, height/2.0f * m_zoom_level);
+	m_resolution = { width, height };
 }
 
 bool Camera_Controller::on_key_event(Events::Key_Pressed_Event& e)
@@ -128,7 +131,7 @@ bool Camera_Controller::on_key_event(Events::Key_Pressed_Event& e)
 		}
 
 		m_camera.Set_Position(m_camera_position);
-		m_camera_translation_speed = 10.0f * m_zoom_level;
+		m_camera_translation_speed = 100.0f * m_zoom_level;
 		return false;
 	}
 
@@ -142,7 +145,7 @@ bool Camera_Controller::on_mouse_scroll(Events::Mouse_Scrolled_Event& e)
 		m_zoom_level -= e.GetYOffset() * 0.125f;
 		m_zoom_level = std::max(m_zoom_level, 0.25f);
 		m_zoom_level = (m_zoom_level <= 3) ? m_zoom_level : 3;
-		m_camera.set_projection(-m_aspect_ratio * m_zoom_level, m_aspect_ratio * m_zoom_level, -m_zoom_level, m_zoom_level);
+		m_camera.set_projection(-m_resolution.x / 2.0f * m_zoom_level, m_resolution.x / 2.0f * m_zoom_level, -m_resolution.y / 2.0f * m_zoom_level, m_resolution.y / 2.0f * m_zoom_level);
 	}
 	return false;
 }

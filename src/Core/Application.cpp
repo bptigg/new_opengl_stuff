@@ -31,11 +31,11 @@ Application::Application(const Application_spec& spec)
 	m_window->Set_Event_Callback(BIND_EVENT_FN(Application::on_event));
 
 	//Temp
-	auto width = m_window->Get_Width();
-	auto height = m_window->Get_Height();
+	float width = m_window->Get_Width();
+	float height = m_window->Get_Height();
 
 	float aspect_ratio = width / height;
-	m_camera = new Camera_Controller(aspect_ratio, false);
+	m_camera = new Camera_Controller(width, height, false);
 	//
 
 	renderer2d::Init();
@@ -96,8 +96,11 @@ void Application::Run()
 		Timestep time = c_time - m_last_frame_time;
 		m_last_frame_time = c_time;
 
+		renderer2d::Begin_Scene(m_camera->get_camera());
+
 		if (!m_minimized)
 		{
+			m_camera->On_Update(time);
 			CIRCLErender_param test_2;
 			test_2.color = { 0.4f, 0.3f, 0.7f, 1.0f };
 			test_2.thickness = 0.5f;
@@ -140,17 +143,40 @@ void Application::Run()
 
 			renderer2d::draw_quad({ 640.0f , 360.0f }, test);
 
+			LINErender_param line;
+			line.color = { 1.0f, 0.0f, 0.5f, 1.0f };
+			line.layer = 2;
+			line.p0 = { 200.0f, 200.0f, 1.0f };
+			line.p1 = { 800.0f, 400.0f, 1.0f };
+			renderer2d::draw_line(line);
+
+			Textrender_param text;
+			text.centered = true;
+			text.color = { 0.5f, 0.6f, 0.2f, 1.0f };
+			text.layer = 3;
+			text.scale = 100.0f;
+			//text.text = "Hello world";
+			text.text = "hello";
+
+			glm::vec2 pos = { 640.0f, 500.0f };
+			renderer2d::draw_text(text, pos);
+
+
 			framebuffer->Bind();
 			framebuffer->clear_attachment(0, -1);
 			framebuffer->clear_attachment(1, -1);
 			glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-			renderer2d::draw();
+			renderer2d::End_Scene();
 
 			framebuffer->Unbind();
 
 			renderer2d::get_texture_library()->get("m_screen")->texture_id = framebuffer->get_color_attachment_renderer_id();
 
 			framebuffer->Unbind();
+
+
+			glm::mat4 mvp = glm::ortho(0.0f, 1280.0f, 0.0f, 720.0f, -1.0f, 1.0f);
+			renderer2d::get_shader_library()->get("Quad")->set_uniform_mat_4f("u_view_proj", mvp);
 
 			renderer2d::draw_quad({ 640.0f, 360.0f }, pic);
 			renderer2d::draw();
