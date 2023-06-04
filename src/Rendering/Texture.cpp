@@ -82,7 +82,7 @@ void Texture::delete_texture(unsigned int id)
 	GlCall(glDeleteTextures(1, &id));
 }
 
-void Texture::bind(GLuint id,unsigned int slot) 
+void Texture::bind(GLuint id,unsigned int slot, bool multisampled) 
 {
 	if (slot > MAX_TEXTURE_SLOTS - 1)
 	{
@@ -90,10 +90,17 @@ void Texture::bind(GLuint id,unsigned int slot)
 	}
 
 	GlCall(glActiveTexture(GL_TEXTURE0 + slot));
-	GlCall(glBindTexture(GL_TEXTURE_2D, id));
+	if (!multisampled)
+	{
+		GlCall(glBindTexture(GL_TEXTURE_2D, id));
+	}
+	else
+	{
+		GlCall(glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, id));
+	}
 }
 
-void Texture::unbind(unsigned int slot) 
+void Texture::unbind(unsigned int slot);
 {
 	GlCall(glActiveTexture(GL_TEXTURE0 + slot));
 	GlCall(glBindTexture(GL_TEXTURE_2D, 0));

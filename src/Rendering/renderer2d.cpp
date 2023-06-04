@@ -469,7 +469,7 @@ void renderer2d::Bind_Texture(std::string texture, uint32_t slot)
 			Unbind_Texture(s_data.assigned_slots[slot], slot);
 		}
 
-		Texture::bind(data->texture_id, slot);
+		Texture::bind(data->texture_id, slot, data->multisampled);
 		data->bound = true;
 		data->slot = slot;
 
@@ -482,7 +482,7 @@ void renderer2d::Bind_Texture(std::string texture, uint32_t slot)
 			Unbind_Texture(s_data.assigned_slots[slot], slot);
 		}
 
-		Texture::bind(data->texture_id, slot);
+		Texture::bind(data->texture_id, slot, data->multisampled);
 		data->slot = slot;
 
 	}
