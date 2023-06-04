@@ -37,8 +37,15 @@ struct render_object
 	float fade = 0.005f;
 
 	//Line only
-	const glm::vec3 p0 = glm::vec3(0.0f);
-	const glm::vec3 p1 = glm::vec3(0.0f);
+	glm::vec3 p0 = glm::vec3(0.0f);
+	glm::vec3 p1 = glm::vec3(0.0f);
+
+	//Text only
+	glm::vec3 pos = glm::vec3(0.0f);
+	float scale = 0.0f;
+	glm::vec2 size = glm::vec2(1.0f);
+	std::string text;
+	bool centered;
 };
 
 class render_queue //Batch by layer, then texture

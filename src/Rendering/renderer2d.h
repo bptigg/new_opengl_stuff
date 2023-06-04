@@ -8,6 +8,8 @@
 #include "SubTexture.h"
 #include "Shader.h"
 
+#include "Orthographic_camera.h"
+
 struct render_object;
 
 struct QUADrender_param
@@ -40,6 +42,16 @@ struct LINErender_param
 	int layer = 0;
 };
 
+struct Textrender_param
+{
+	glm::vec4 color = glm::vec4(1.0f);
+	std::string text;
+	float scale;
+	bool centered;
+
+	int layer = 0;
+};
+
 class renderer2d
 {
 public:
@@ -49,7 +61,7 @@ public:
 	static void Init();
 	static void Shutdown();
 
-	static void Begin_Scene();
+	static void Begin_Scene(const Orthographic_camera& camera);
 	static void End_Scene();
 	static void Flush();
 	static void draw();
@@ -62,10 +74,12 @@ public:
 
 	static void draw_circle(CIRCLErender_param& render_data);
 	static void draw_line(LINErender_param& render_data);
+	
+	static void draw_text(Textrender_param& render_data, glm::vec2& position);
 
-	//static void update_quad_shader(std::string shader);
-	//static void update_circle_shader(std::string shader);
-	//static void update_line_shader(std::string shader);
+	static void update_quad_shader(std::string shader);
+	static void update_circle_shader(std::string shader);
+	static void update_line_shader(std::string shader);
 
 
 public:
@@ -88,6 +102,9 @@ public:
 	static Texture_Library* get_texture_library();
 	static Shader_Library* get_shader_library();
 
+	static float get_line_width();
+	static void set_line_width(float width);
+
 private:
 
 	static float get_texture_index(std::string texture);
@@ -98,14 +115,15 @@ private:
 	static void Flush_Quads();
 	static void Flush_Circles();
 	static void Flush_Lines();
+	static void Flush_Text();
 
 
 	static void m_draw_quad(render_object& quad_obj);
 	static void m_draw_circle(render_object& circle_obj);
+	static void m_draw_line(render_object& line_obj);
+	static void m_draw_text(render_object& text_obj);
 
 	static void Next_Batch();
 	static void Start_Batch();
-
-
 };
 

@@ -49,13 +49,24 @@ struct render_data
 	std::shared_ptr<Vertex_Buffer> Line_VB;
 	std::shared_ptr<shader> Line_shader;
 
+	uint32_t Text_index_count = 0;
+	TextVertex* TextVertexBufferBase = nullptr;
+	TextVertex* TextVertexBufferPtr = nullptr;
+	std::shared_ptr<Vertex_Array> Text_VAO;
+	std::shared_ptr<Vertex_Buffer> Text_VB;
+	std::shared_ptr<shader> Text_shader;
+
 	float Line_Width = 2.0f;
 
 	std::array<std::string, MAX_TEXTURE_SLOTS> texture_slots;
+	std::unordered_map<int, std::string> assigned_slots;
 	uint32_t CurrentSlotIndex = 1; //0 - white
 	unsigned int white_texture;
 
 	glm::vec4 Quad_Vertex_Positions[4];
+
+
+	std::unordered_map<char, Character> characters;
 	
 	renderer2d::Statistics stats;
 
@@ -128,8 +139,16 @@ void renderer2d::Init()
 			(uint16_t)face->glyph->advance.x,
 		};
 
-		//s_data.characters[c] = character;
-		//s_data.characters[c].tex_id = Texture::Create_Texture(face->glyph->bitmap.width, face->glyph->bitmap.rows, face->glyph->bitmap.buffer);
+		s_data.characters[c] = character;
+		s_data.characters[c].tex_id = Texture::Create_Texture(face->glyph->bitmap.width, face->glyph->bitmap.rows, face->glyph->bitmap.buffer);
+
+		std::shared_ptr<Texture_Data> chr = std::make_shared<Texture_Data>(Texture_Data());
+		chr->texture_id = s_data.characters[c].tex_id;
+		chr->bound = false;
+		chr->slot = 0;
+		chr->alive = true;
+		std::string name(1, c);
+		s_TexLibary->Add(name, chr);
 	}
 
 	FT_Done_Face(face);
@@ -177,6 +196,19 @@ void renderer2d::Init()
 	}
 	s_data.LineVertexBufferBase = new LineVertex[s_data.max_verticies];
 
+	s_data.Text_VB = std::shared_ptr<Vertex_Buffer>(new Vertex_Buffer(s_data.max_verticies * sizeof(TextVertex)));
+	s_data.Text_VAO = std::shared_ptr<Vertex_Array>(new Vertex_Array());
+	{
+		Vertex_Buffer_Layout text_layout;
+		text_layout.Push<float>(3);
+		text_layout.Push<float>(4);
+		text_layout.Push<float>(2);
+		text_layout.Push<float>(1);
+		s_data.Text_VAO->add_buffer(*s_data.Text_VB, text_layout);
+	}
+	s_data.Text_VAO->add_index_buffer(s_data.Quad_IB);
+	s_data.TextVertexBufferBase = new TextVertex[s_data.max_verticies];
+
 	unsigned int color = 0xffffffff;
 	GLuint white_texture = Texture::Create_Texture(1, 1, color, s_data.white_texture);
 	
@@ -199,22 +231,30 @@ void renderer2d::Init()
 	}
 
 	//Load shaders
-	s_ShaderLibrary->Load("Quad", "res/shaders/Quad.shader");
+	s_ShaderLibrary->Load("Quad", "res/shaders/Quad.glsl");
 	s_data.Quad_shader = s_ShaderLibrary->get("Quad");
 
-	s_ShaderLibrary->Load("Circle", "res/shaders/Circle.shader");
+	s_ShaderLibrary->Load("Circle", "res/shaders/Circle.glsl");
 	s_data.Circle_shader = s_ShaderLibrary->get("Circle");
+
+	s_ShaderLibrary->Load("Line", "res/shaders/Line.glsl");
+	s_data.Line_shader = s_ShaderLibrary->get("Line");
+
+	s_ShaderLibrary->Load("Text", "res/shaders/Text.glsl");
+	s_data.Text_shader = s_ShaderLibrary->get("Text");
 
 	//temp thing 
 
 	glm::mat4 mvp = glm::ortho(0.0f, 1280.0f, 0.0f, 720.0f, -1.0f, 1.0f);
-	glm::mat4 transform = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 0));
 
-	s_data.Quad_shader->set_uniform_mat_4f("u_view_proj", mvp);
-	s_data.Quad_shader->set_uniform_mat_4f("u_transform", transform);
+	//s_data.Quad_shader->set_uniform_mat_4f("u_view_proj", mvp);
 	s_data.Quad_shader->set_uniform_1iv("u_textures", 32, samplers);
 
-	s_data.Circle_shader->set_uniform_mat_4f("u_view_proj", mvp);
+	//s_data.Circle_shader->set_uniform_mat_4f("u_view_proj", mvp);
+	//s_data.Line_shader->set_uniform_mat_4f("u_view_proj", mvp);
+	
+	//s_data.Text_shader->set_uniform_mat_4f("u_view_proj", mvp);
+	s_data.Text_shader->set_uniform_1iv("u_textures", 32, samplers);
 	
 
 	s_data.Quad_Vertex_Positions[0] = { -0.5f, -0.5f, 0.0f, 1.0f };
@@ -239,17 +279,27 @@ void renderer2d::Shutdown()
 	s_data.Line_VB->shutdown();
 	s_data.Line_VA0->shutdown();
 
+	s_data.Text_VB->shutdown();
+	s_data.Text_VAO->shutdown();
+
 	Rendering_manager::Shutdown();
 
 	//delete s_data.Quad_IB;
 }
 
-void renderer2d::Begin_Scene()
+void renderer2d::Begin_Scene(const Orthographic_camera& camera)
 {
+	glm::mat4 mvp = camera.Get_View_Projection_Matrix();
+	
+	s_data.Quad_shader->set_uniform_mat_4f("u_view_proj", mvp);
+	s_data.Circle_shader->set_uniform_mat_4f("u_view_proj", mvp);
+	s_data.Line_shader->set_uniform_mat_4f("u_view_proj", mvp);
+	s_data.Text_shader->set_uniform_mat_4f("u_view_proj", mvp);
 }
 
 void renderer2d::End_Scene()
 {
+	draw();
 }
 
 void renderer2d::draw_quad(const glm::vec2& position, QUADrender_param& render_data)
@@ -306,6 +356,68 @@ void renderer2d::draw_circle(CIRCLErender_param& render_data)
 
 void renderer2d::draw_line(LINErender_param& render_data)
 {
+	std::shared_ptr<render_object>line(new render_object);
+	line->type = render_type::LINE;
+	line->p0 = render_data.p0;
+	line->p1 = render_data.p1;
+	line->Texture = "s_white";
+	line->color = render_data.color;
+	line->layer = render_data.layer;
+
+	Rendering_manager::submit_queue_object(line);
+}
+
+void renderer2d::draw_text(Textrender_param& render_data, glm::vec2& position)
+{
+	std::shared_ptr<render_object>text(new render_object);
+
+	float width		= 0.0f;
+	float height	= 0.0f;
+	float min_y		= 0.0f;
+	float new_scale = render_data.scale / 100;
+
+	for (std::string::const_iterator c = render_data.text.begin(); c != render_data.text.end(); c++)
+	{
+		Character* ch = &s_data.characters[*c];
+		width += (ch->advance >> 6) * new_scale;
+		float h = ch->bearing.y * new_scale;
+		if (h > height)
+		{
+			height = h;
+		}
+		float y = (ch->bearing.y - ch->size.y) * new_scale;
+		if (y > min_y)
+		{
+			min_y = y;
+		}
+	}
+
+	text->centered = render_data.centered;
+	text->pos = glm::vec3(position,1.0f);
+	text->color = render_data.color;
+	text->text = render_data.text;
+	text->scale = new_scale;
+	text->size = { width, height - min_y };
+	text->layer = render_data.layer;
+	text->type = render_type::TEXT;
+	text->Texture = "Text";
+
+	Rendering_manager::submit_queue_object(text);
+}
+
+void renderer2d::update_quad_shader(std::string shader)
+{
+	s_data.Quad_shader = s_ShaderLibrary->get(shader);
+}
+
+void renderer2d::update_circle_shader(std::string shader)
+{
+	s_data.Circle_shader = s_ShaderLibrary->get(shader);
+}
+
+void renderer2d::update_line_shader(std::string shader)
+{
+	s_data.Line_shader = s_ShaderLibrary->get(shader);
 }
 
 void renderer2d::reset_stats()
@@ -351,17 +463,28 @@ void renderer2d::Bind_Texture(std::string texture, uint32_t slot)
 	std::shared_ptr<Texture_Data> data = s_TexLibary->get(texture);
 	if (data->bound == false)
 	{
-		//Texture::bind(data->texture_id, slot);
-		glBindTextureUnit(slot, data->texture_id);
+
+		if (s_data.assigned_slots[slot] != "")
+		{
+			Unbind_Texture(s_data.assigned_slots[slot], slot);
+		}
+
+		Texture::bind(data->texture_id, slot, data->multisampled);
 		data->bound = true;
 		data->slot = slot;
+
+		s_data.assigned_slots[slot] = texture;
 	}
 	else if (data->bound == true && slot != data->slot)
 	{
-		Texture::unbind(data->slot);
-		//Texture::bind(data->texture_id, slot);
-		glBindTextureUnit(slot, data->texture_id);
+		if (s_data.assigned_slots[slot] != "")
+		{
+			Unbind_Texture(s_data.assigned_slots[slot], slot);
+		}
+
+		Texture::bind(data->texture_id, slot, data->multisampled);
 		data->slot = slot;
+
 	}
 }
 
@@ -403,10 +526,10 @@ void renderer2d::draw()
 					m_draw_circle(*draw_calls[i]);
 					break;
 				case render_type::LINE:
-					//m_draw_line(*draw_calls[i]);
+					m_draw_line(*draw_calls[i]);
 					break;
 				case render_type::TEXT:
-					//m_draw_text(*draw_calls[i]);
+					m_draw_text(*draw_calls[i]);
 					break;
 				default:
 					Log::warning("UNKNOWN DRAW TYPE");
@@ -432,6 +555,10 @@ void renderer2d::Flush()
 	if (s_data.Line_index_count)
 	{
 		Flush_Lines();
+	}
+	if (s_data.Text_index_count)
+	{
+		Flush_Text(); //Need to fix the texture binding stuff
 	}
 }
 
@@ -490,6 +617,24 @@ void renderer2d::Flush_Lines()
 	s_data.Line_VB->clear_buffer();
 }
 
+void renderer2d::Flush_Text()
+{
+	uint32_t data_size = (uint32_t)((uint8_t*)s_data.TextVertexBufferPtr - (uint8_t*)s_data.TextVertexBufferBase);
+	s_data.Text_VB->add_to_buffer((void*)s_data.TextVertexBufferBase, data_size);
+
+	for (uint32_t i = 0; i < s_data.CurrentSlotIndex; i++)
+	{
+		Bind_Texture(s_data.texture_slots[i], i);
+	}
+
+	s_data.Text_shader->bind();
+	s_data.Text_VAO->bind();
+	GlCall(glDrawElements(GL_TRIANGLES, s_data.Text_index_count, GL_UNSIGNED_INT, nullptr));
+	s_data.stats.DrawCalls++;
+
+	s_data.Text_VB->clear_buffer();
+}
+
 void renderer2d::m_draw_quad(render_object& quad_obj)
 {
 	constexpr size_t quad_vertex_count = 4;
@@ -540,6 +685,90 @@ void renderer2d::m_draw_circle(render_object& circle_obj)
 	s_data.stats.QuadCount++;
 }
 
+void renderer2d::m_draw_line(render_object& line_obj)
+{
+	s_data.LineVertexBufferPtr->Position = line_obj.p0;
+	s_data.LineVertexBufferPtr->Colour = line_obj.color;
+	s_data.LineVertexBufferPtr++;
+
+	s_data.LineVertexBufferPtr->Position = line_obj.p1;
+	s_data.LineVertexBufferPtr->Colour = line_obj.color;
+	s_data.LineVertexBufferPtr++;
+
+	s_data.Line_index_count += 2;
+}
+
+void renderer2d::m_draw_text(render_object& text_obj)
+{
+	float x_offset = 0.0f;
+	//Start_Batch();
+	for (std::string::const_iterator c = text_obj.text.begin(); c != text_obj.text.end(); c++)
+	{
+		Character* ch = &s_data.characters[*c];
+		if (s_data.Text_index_count + 6 >= s_data.max_indicies + 1)
+		{
+			Next_Batch();
+		}
+
+		float tex_id = ch->tex_id;
+
+		float tex_index = get_texture_index(std::string(1,*c));
+
+		glm::vec3 pos = { text_obj.pos.x + (ch->bearing.x * text_obj.scale) + x_offset, text_obj.pos.y + (ch->size.y - ch->bearing.y) * text_obj.scale, 1.0f};
+		float w = ch->size.x * text_obj.scale;
+		float h = ch->size.y * text_obj.scale;
+
+		glm::vec2 bottom, top;
+		if (text_obj.centered)
+		{
+			bottom.x = -text_obj.size.x / 2.0f;
+			bottom.y = -text_obj.size.y / 2.0f;
+
+			top.x = bottom.x + w;
+			top.y = bottom.y + h;
+		}
+		else
+		{
+			bottom.x = 0.0f;
+			bottom.y = 0.0f;
+
+			top.x = w;
+			top.y = h;
+		}
+
+		s_data.TextVertexBufferPtr->Position = { pos.x + bottom.x, pos.y + top.y, 1.0f };
+		s_data.TextVertexBufferPtr->Color = text_obj.color;
+		s_data.TextVertexBufferPtr->TexCoord = { 0.0f, 0.0f };
+		s_data.TextVertexBufferPtr->TexIndex = tex_index;
+		s_data.TextVertexBufferPtr++;
+
+		s_data.TextVertexBufferPtr->Position = { pos.x + top.x, pos.y + top.y, 1.0f };
+		s_data.TextVertexBufferPtr->Color = text_obj.color;
+		s_data.TextVertexBufferPtr->TexCoord = { 1.0f, 0.0f };
+		s_data.TextVertexBufferPtr->TexIndex = tex_index;
+		s_data.TextVertexBufferPtr++;
+
+		s_data.TextVertexBufferPtr->Position = { pos.x + top.x, pos.y + bottom.y, 1.0f };
+		s_data.TextVertexBufferPtr->Color = text_obj.color;
+		s_data.TextVertexBufferPtr->TexCoord = { 1.0f, 1.0f };
+		s_data.TextVertexBufferPtr->TexIndex = tex_index;
+		s_data.TextVertexBufferPtr++;
+
+		s_data.TextVertexBufferPtr->Position = { pos.x + bottom.x, pos.y + bottom.y, 1.0f };
+		s_data.TextVertexBufferPtr->Color = text_obj.color;
+		s_data.TextVertexBufferPtr->TexCoord = { 0.0f, 1.0f };
+		s_data.TextVertexBufferPtr->TexIndex = tex_index;
+		s_data.TextVertexBufferPtr++;
+
+		s_data.Text_index_count += 6;
+
+		x_offset += (ch->advance >> 6) * text_obj.scale;
+
+		Next_Batch();
+
+	}
+}
+
 void renderer2d::Next_Batch()
 {
 	Flush();
@@ -556,6 +785,9 @@ void renderer2d::Start_Batch()
 
 	s_data.Line_index_count = 0;
 	s_data.LineVertexBufferPtr = s_data.LineVertexBufferBase;
+
+	s_data.Text_index_count = 0;
+	s_data.TextVertexBufferPtr = s_data.TextVertexBufferBase;
 
 	s_data.CurrentSlotIndex = 1;
 }
@@ -589,4 +821,14 @@ Texture_Library* renderer2d::get_texture_library()
 Shader_Library* renderer2d::get_shader_library()
 {
 	return s_ShaderLibrary;
+}
+
+float renderer2d::get_line_width()
+{
+	return s_data.Line_Width;
+}
+
+void renderer2d::set_line_width(float width)
+{
+	s_data.Line_Width = width;
 }

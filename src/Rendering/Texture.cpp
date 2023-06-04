@@ -16,12 +16,12 @@ Texture_Data Texture::Load_Texture(std::string path)
 
 	GlCall(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, local_buffer));
 
-	GlCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+	GlCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR));
 	GlCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
 	GlCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT));
 	GlCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT));
 
-	//GlCall(glGenerateTextureMipmap(renderer_id));
+	GlCall(glGenerateTextureMipmap(renderer_id));
 
 	GlCall(glBindTexture(GL_TEXTURE_2D, 0));
 
@@ -82,7 +82,7 @@ void Texture::delete_texture(unsigned int id)
 	GlCall(glDeleteTextures(1, &id));
 }
 
-void Texture::bind(GLuint id,unsigned int slot) 
+void Texture::bind(GLuint id,unsigned int slot, bool multisampled) 
 {
 	if (slot > MAX_TEXTURE_SLOTS - 1)
 	{
@@ -90,10 +90,17 @@ void Texture::bind(GLuint id,unsigned int slot)
 	}
 
 	GlCall(glActiveTexture(GL_TEXTURE0 + slot));
-	GlCall(glBindTexture(GL_TEXTURE_2D, id));
+	if (!multisampled)
+	{
+		GlCall(glBindTexture(GL_TEXTURE_2D, id));
+	}
+	else
+	{
+		GlCall(glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, id));
+	}
 }
 
-void Texture::unbind(unsigned int slot) 
+void Texture::unbind(unsigned int slot);
 {
 	GlCall(glActiveTexture(GL_TEXTURE0 + slot));
 	GlCall(glBindTexture(GL_TEXTURE_2D, 0));

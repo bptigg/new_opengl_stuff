@@ -10,6 +10,15 @@ struct Character
 	uint16_t advance;
 };
 
+struct TextVertex
+{
+	glm::vec3 Position;
+	glm::vec4 Color;
+	glm::vec2 TexCoord;
+	
+	float TexIndex;
+};
+
 struct QuadVertex
 {
 	glm::vec3 Position;

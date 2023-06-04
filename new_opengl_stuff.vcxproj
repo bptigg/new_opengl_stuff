@@ -147,6 +147,9 @@
     <ClCompile Include="src\Core\Entry point.cpp" />
     <ClCompile Include="src\Core\Input.cpp" />
     <ClCompile Include="src\Core\Window.cpp" />
+    <ClCompile Include="src\Layers\GameLayer.cpp" />
+    <ClCompile Include="src\Layers\Layer.cpp" />
+    <ClCompile Include="src\Layers\LayerStack.cpp" />
     <ClCompile Include="src\Rendering\Camera_Controller.cpp" />
     <ClCompile Include="src\Rendering\Framebuffer.cpp" />
     <ClCompile Include="src\Rendering\Index_Buffer.cpp" />
@@ -171,6 +174,9 @@
     <ClInclude Include="src\Events\Event.h" />
     <ClInclude Include="src\Events\Key_Event.h" />
     <ClInclude Include="src\Events\Mouse_Event.h" />
+    <ClInclude Include="src\Layers\GameLayer.h" />
+    <ClInclude Include="src\Layers\Layer.h" />
+    <ClInclude Include="src\Layers\LayerStack.h" />
     <ClInclude Include="src\Rendering\Camera_Controller.h" />
     <ClInclude Include="src\Rendering\Framebuffer.h" />
     <ClInclude Include="src\Rendering\glDebug.h" />

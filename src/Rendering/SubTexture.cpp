@@ -40,6 +40,13 @@ std::shared_ptr<SubTexture> SubTexture_Library::create(const std::string& name, 
 	return sub_texture;
 }
 
+std::shared_ptr<SubTexture> SubTexture_Library::create_false(const std::string& name, const std::string& parent_name, const Texture_Data& parent)
+{
+	auto sub_texture = SubTexture::create_from_coords(parent_name, parent, { 0,0 }, { parent.size.x, parent.size.y });
+	Add(name, sub_texture);
+	return sub_texture;
+}
+
 std::shared_ptr<SubTexture> SubTexture_Library::get(const std::string& name)
 {
 	if (sub_texture_exists(name)) { Log::crit("Texture not found", __FILE__, __LINE__); }

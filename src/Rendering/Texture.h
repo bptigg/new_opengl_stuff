@@ -14,6 +14,7 @@ struct Texture_Data
 	bool bound = false;
 	uint32_t slot = 0;
 	bool alive = true;
+	bool multisampled = false;
 };
 
 class Texture
@@ -29,8 +30,8 @@ public:
 	
 	static void delete_texture(unsigned int id);
 
-	static void bind(GLuint id, unsigned int slot = 0) ;
-	static void unbind(unsigned int slot) ;
+	static void bind(GLuint id, unsigned int slot = 0, bool multisampled = false) ;
+	static void unbind(unsigned int slot);
 
 };
 
