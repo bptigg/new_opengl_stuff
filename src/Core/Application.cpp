@@ -61,12 +61,17 @@ void Application::Run()
 {
 	renderer2d::enable_blending();
 
+	GLint max_samples = 0;
+	glGetIntegerv(GL_MAX_INTEGER_SAMPLES, &max_samples);
+	std::cout << max_samples << std::endl;
+
 	//temp code
 	float old_1 = 0, old_2 = 0, old_3 = 0;
 	Framebufferspec fbspec;
 	fbspec.Attachments = { FramebufferTextureFormat::RGBA8, FramebufferTextureFormat::RED_INTEGER, FramebufferTextureFormat::Depth };
 	fbspec.width = 1280;
 	fbspec.height = 720;
+	fbspec.samples = 8;
 	auto framebuffer = Framebuffer::Create(fbspec);
 
 	std::shared_ptr<Texture_Data> screen = std::make_shared<Texture_Data>(Texture_Data());
@@ -75,6 +80,7 @@ void Application::Run()
 	screen->bound = false;
 	screen->slot = 0;
 	screen->alive = true;
+	screen->multisampled = true;
 
 	std::string screen_name = "m_screen";
 	renderer2d::get_texture_library()->Add(screen_name, screen);
@@ -87,6 +93,19 @@ void Application::Run()
 	pic.rotation = 0;
 	pic.Texture = "s_screen";
 
+	renderer2d::get_shader_library()->Load("MSAA", "res/shaders/MSAA.glsl");
+	glm::mat4 mvp = glm::ortho(0.0f, 1280.0f, 0.0f, 720.0f, -1.0f, 1.0f);
+	renderer2d::get_shader_library()->get("MSAA")->set_uniform_mat_4f("u_view_proj", mvp);
+	renderer2d::get_shader_library()->get("MSAA")->set_uniform_1i("u_samples", fbspec.samples);
+
+	int samplers[32];
+	for (int i = 0; i < 32; i++)
+	{
+		samplers[i] = i;
+	}
+
+	renderer2d::get_shader_library()->get("MSAA")->set_uniform_1iv("u_textures", 32, samplers);
+
 
 	while (m_running)
 	{
@@ -95,7 +114,8 @@ void Application::Run()
 		float c_time = glfwGetTime();
 		Timestep time = c_time - m_last_frame_time;
 		m_last_frame_time = c_time;
-
+		
+		renderer2d::update_quad_shader("Quad");
 		renderer2d::Begin_Scene(m_camera->get_camera());
 
 		if (!m_minimized)
@@ -165,7 +185,7 @@ void Application::Run()
 			framebuffer->Bind();
 			framebuffer->clear_attachment(0, -1);
 			framebuffer->clear_attachment(1, -1);
-			glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+			glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 			renderer2d::End_Scene();
 
 			framebuffer->Unbind();
@@ -174,9 +194,7 @@ void Application::Run()
 
 			framebuffer->Unbind();
 
-
-			glm::mat4 mvp = glm::ortho(0.0f, 1280.0f, 0.0f, 720.0f, -1.0f, 1.0f);
-			renderer2d::get_shader_library()->get("Quad")->set_uniform_mat_4f("u_view_proj", mvp);
+			renderer2d::update_quad_shader("MSAA");
 
 			renderer2d::draw_quad({ 640.0f, 360.0f }, pic);
 			renderer2d::draw();
