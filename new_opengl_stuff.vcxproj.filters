@@ -87,6 +87,9 @@
     <ClCompile Include="src\Layers\GameLayer.cpp">
       <Filter>Source Files\Layers</Filter>
     </ClCompile>
+    <ClCompile Include="src\Rendering\Post_Processing.cpp">
+      <Filter>Source Files\Renderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Rendering\Shader.h">
@@ -171,6 +174,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Layers\GameLayer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Rendering\Post_Processing.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

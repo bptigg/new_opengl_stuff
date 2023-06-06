@@ -94,8 +94,6 @@ void Application::Run()
 	pic.Texture = "s_screen";
 
 	renderer2d::get_shader_library()->Load("MSAA", "res/shaders/MSAA.glsl");
-	glm::mat4 mvp = glm::ortho(0.0f, 1280.0f, 0.0f, 720.0f, -1.0f, 1.0f);
-	renderer2d::get_shader_library()->get("MSAA")->set_uniform_mat_4f("u_view_proj", mvp);
 	renderer2d::get_shader_library()->get("MSAA")->set_uniform_1i("u_samples", fbspec.samples);
 
 	int samplers[32];
@@ -192,6 +190,9 @@ void Application::Run()
 
 			renderer2d::get_texture_library()->get("m_screen")->texture_id = framebuffer->get_color_attachment_renderer_id();
 
+			glm::mat4 mvp = glm::ortho(0.0f, 1280.0f, 0.0f, 720.0f, -1.0f, 1.0f);
+			renderer2d::get_shader_library()->get("MSAA")->set_uniform_mat_4f("u_view_proj", mvp);
+
 			framebuffer->Unbind();
 
 			renderer2d::update_quad_shader("MSAA");
@@ -218,6 +219,8 @@ bool Application::on_window_resize(Events::Window_Resize_Event& e)
 		m_minimized = true;
 		return false;
 	}
+
+	glViewport(0, 0, e.GetWidth(), e.GetHeight());
 
 	m_minimized = false;
 	return false;
