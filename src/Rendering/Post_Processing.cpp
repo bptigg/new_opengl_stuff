@@ -1,4 +1,5 @@
 #include "Post_Processing.h"
+#include "../utilities/utility.h"
 
 struct PostProcessingData
 {
@@ -27,6 +28,8 @@ void PostProcessing::BeginScene(std::shared_ptr<Framebuffer> initial)
 {
 	s_data->m_ActiveFramebuffer = initial;
 
+	//if(s_)
+
 	for (int i = 0; i < s_data->m_pipeline.size(); i++)
 	{
 		auto buffer = s_data->m_Framebuffers[s_data->m_pipeline[i]];
@@ -41,4 +44,32 @@ void PostProcessing::BeginScene(std::shared_ptr<Framebuffer> initial)
 std::shared_ptr<Framebuffer> PostProcessing::EndScene()
 {
 	return s_data->m_ActiveFramebuffer;
+}
+
+void PostProcessing::AddStep(PostProcessingEffect effect)
+{
+	s_data->m_pipeline.push_back(effect);
+}
+
+uint32_t PostProcessing::get_unique()
+{
+	uint32_t unique_types = 0;
+	
+	PostProcessingEffect* types = new PostProcessingEffect[(int)PostProcessingEffect::DEFAULT];
+
+	for (int i = 0; i < s_data->m_pipeline.size(); i++)
+	{
+		if (Utility::find_in_array<PostProcessingEffect>(types, (int)PostProcessingEffect::DEFAULT, s_data->m_pipeline[i]))
+		{
+			continue;
+		}
+		else
+		{
+			unique_types++;
+		}
+	}
+
+	delete[] types;
+
+	return unique_types;
 }

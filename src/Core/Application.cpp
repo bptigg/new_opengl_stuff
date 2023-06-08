@@ -6,6 +6,8 @@
 
 #include "../Rendering/Framebuffer.h"
 
+#include "../utilities/utility.h"
+
 #define _USE_MATH_DEFINES
 #include <math.h>
 
@@ -103,6 +105,16 @@ void Application::Run()
 	}
 
 	renderer2d::get_shader_library()->get("MSAA")->set_uniform_1iv("u_textures", 32, samplers);
+
+	int* test = new int[10];
+	for (int i = 0; i < 10; i++)
+	{
+		test[i] = i;
+	}
+
+	Utility::find_in_array<int>(test, 10, 5);
+	Utility::find_in_array<int>(test, 10, 10);
+	delete[] test;
 
 
 	while (m_running)

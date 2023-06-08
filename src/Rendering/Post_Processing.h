@@ -26,5 +26,9 @@ public:
 	static void BeginScene(std::shared_ptr<Framebuffer> initial);
 	static std::shared_ptr<Framebuffer> EndScene();
 
+	static void AddStep(PostProcessingEffect effect);
+private:
+	static uint32_t get_unique();
+
 };
 
