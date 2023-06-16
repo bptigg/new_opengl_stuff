@@ -33,4 +33,33 @@ namespace Utility
 		}
 	}
 
+
+	template<typename t>
+	bool find_in_array(t* list, uint32_t size, t value)
+	{
+		t* ArraryPtr = list;
+		for (uint32_t i = 0; i < size; i++)
+		{
+			if (*ArraryPtr == value)
+			{
+				return true;
+			}
+			ArraryPtr++;
+		}
+		return false;
+	}
+
+	template<typename t>
+	bool find_in_array(std::vector<t> vec, t value)
+	{
+		for (uint32_t i = 0; i < vec.size(); i++)
+		{
+			if (vec[i] == value)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
 }

@@ -59,6 +59,7 @@ class Shader_Library
 public:
 
 	~Shader_Library();
+	void shutdown();
 
 	void Add(const std::string& name, const std::shared_ptr<shader>& shader);
 	void Add(const std::shared_ptr<shader>& shader);

@@ -74,9 +74,9 @@ struct render_data
 };
 
 static render_data s_data;
-static Texture_Library* s_TexLibary = nullptr;
-static SubTexture_Library* s_SubTexLibrary = nullptr;
-static Shader_Library* s_ShaderLibrary = nullptr;
+static std::shared_ptr<Texture_Library> s_TexLibary = nullptr;
+static std::shared_ptr<SubTexture_Library> s_SubTexLibrary = nullptr;
+static std::shared_ptr<Shader_Library> s_ShaderLibrary = nullptr;
 
 
 renderer2d::~renderer2d()
@@ -95,9 +95,9 @@ void renderer2d::Init()
 		return;
 	}
 
-	s_TexLibary = new Texture_Library;
-	s_SubTexLibrary = new SubTexture_Library;
-	s_ShaderLibrary = new Shader_Library;
+	s_TexLibary = std::shared_ptr<Texture_Library>(new Texture_Library);
+	s_SubTexLibrary = std::shared_ptr<SubTexture_Library>(new SubTexture_Library);
+	s_ShaderLibrary = std::shared_ptr<Shader_Library>(new Shader_Library);
 	Rendering_manager::Init();
 
 	GLint max_slots;
@@ -265,9 +265,9 @@ void renderer2d::Init()
 
 void renderer2d::Shutdown()
 {
-	delete s_TexLibary;
-	delete s_SubTexLibrary;
-	delete s_ShaderLibrary;
+	//delete s_TexLibary;
+	//delete s_SubTexLibrary;
+	//delete s_ShaderLibrary;
 
 	s_data.Quad_IB->shutdown();
 	s_data.Quad_VB->shutdown();
@@ -282,9 +282,17 @@ void renderer2d::Shutdown()
 	s_data.Text_VB->shutdown();
 	s_data.Text_VAO->shutdown();
 
+	delete[] s_data.QuadVertexBufferBase;
+	delete[] s_data.CircleVertexBufferBase;
+	delete[] s_data.LineVertexBufferBase;
+	delete[] s_data.TextVertexBufferBase;
+
 	Rendering_manager::Shutdown();
+	s_ShaderLibrary->shutdown();
+	s_TexLibary->shutdown();
 
 	//delete s_data.Quad_IB;
+	Log::info("RENDERER 2D SHUTDOWN");
 }
 
 void renderer2d::Begin_Scene(const Orthographic_camera& camera)
@@ -808,17 +816,17 @@ void renderer2d::disable_blending()
 	glDisable(GL_BLEND);
 }
 
-SubTexture_Library* renderer2d::get_subtexture_library()
+std::shared_ptr<SubTexture_Library> renderer2d::get_subtexture_library()
 {
 	return s_SubTexLibrary;
 }
 
-Texture_Library* renderer2d::get_texture_library()
+std::shared_ptr<Texture_Library> renderer2d::get_texture_library()
 {
 	return s_TexLibary;
 }
 
-Shader_Library* renderer2d::get_shader_library()
+std::shared_ptr<Shader_Library> renderer2d::get_shader_library()
 {
 	return s_ShaderLibrary;
 }

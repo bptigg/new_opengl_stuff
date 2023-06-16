@@ -154,6 +154,7 @@
     <ClCompile Include="src\Rendering\Framebuffer.cpp" />
     <ClCompile Include="src\Rendering\Index_Buffer.cpp" />
     <ClCompile Include="src\Rendering\Orthographic_camera.cpp" />
+    <ClCompile Include="src\Rendering\Post_Processing.cpp" />
     <ClCompile Include="src\Rendering\renderer2d.cpp" />
     <ClCompile Include="src\Rendering\Rendering_manager.cpp" />
     <ClCompile Include="src\Rendering\Shader.cpp" />
@@ -182,6 +183,7 @@
     <ClInclude Include="src\Rendering\glDebug.h" />
     <ClInclude Include="src\Rendering\Index_Buffer.h" />
     <ClInclude Include="src\Rendering\Orthographic_camera.h" />
+    <ClInclude Include="src\Rendering\Post_Processing.h" />
     <ClInclude Include="src\Rendering\renderer2d.h" />
     <ClInclude Include="src\Rendering\Rendering_manager.h" />
     <ClInclude Include="src\Rendering\Shader.h" />
