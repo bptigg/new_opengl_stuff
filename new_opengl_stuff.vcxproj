@@ -147,10 +147,14 @@
     <ClCompile Include="src\Core\Entry point.cpp" />
     <ClCompile Include="src\Core\Input.cpp" />
     <ClCompile Include="src\Core\Window.cpp" />
+    <ClCompile Include="src\Layers\GameLayer.cpp" />
+    <ClCompile Include="src\Layers\Layer.cpp" />
+    <ClCompile Include="src\Layers\LayerStack.cpp" />
     <ClCompile Include="src\Rendering\Camera_Controller.cpp" />
     <ClCompile Include="src\Rendering\Framebuffer.cpp" />
     <ClCompile Include="src\Rendering\Index_Buffer.cpp" />
     <ClCompile Include="src\Rendering\Orthographic_camera.cpp" />
+    <ClCompile Include="src\Rendering\Post_Processing.cpp" />
     <ClCompile Include="src\Rendering\renderer2d.cpp" />
     <ClCompile Include="src\Rendering\Rendering_manager.cpp" />
     <ClCompile Include="src\Rendering\Shader.cpp" />
@@ -159,6 +163,7 @@
     <ClCompile Include="src\Rendering\Vertex_Array.cpp" />
     <ClCompile Include="src\Rendering\Vertex_Buffer.cpp" />
     <ClCompile Include="src\utilities\log.cpp" />
+    <ClCompile Include="src\utilities\utility.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Core\Application.h" />
@@ -170,11 +175,15 @@
     <ClInclude Include="src\Events\Event.h" />
     <ClInclude Include="src\Events\Key_Event.h" />
     <ClInclude Include="src\Events\Mouse_Event.h" />
+    <ClInclude Include="src\Layers\GameLayer.h" />
+    <ClInclude Include="src\Layers\Layer.h" />
+    <ClInclude Include="src\Layers\LayerStack.h" />
     <ClInclude Include="src\Rendering\Camera_Controller.h" />
     <ClInclude Include="src\Rendering\Framebuffer.h" />
     <ClInclude Include="src\Rendering\glDebug.h" />
     <ClInclude Include="src\Rendering\Index_Buffer.h" />
     <ClInclude Include="src\Rendering\Orthographic_camera.h" />
+    <ClInclude Include="src\Rendering\Post_Processing.h" />
     <ClInclude Include="src\Rendering\renderer2d.h" />
     <ClInclude Include="src\Rendering\Rendering_manager.h" />
     <ClInclude Include="src\Rendering\Shader.h" />
@@ -185,6 +194,10 @@
     <ClInclude Include="src\Rendering\Vertex_Buffer.h" />
     <ClInclude Include="src\Rendering\Vertex_Buffer_Layout.h" />
     <ClInclude Include="src\utilities\log.h" />
+    <ClInclude Include="src\utilities\utility.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="test.shader" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

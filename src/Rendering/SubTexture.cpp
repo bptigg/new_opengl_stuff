@@ -16,6 +16,11 @@ std::shared_ptr<SubTexture> SubTexture::create_from_coords(const std::string& pa
 	return std::shared_ptr<SubTexture>(new SubTexture(parent_name, min, max, true));
 }
 
+SubTexture_Library::~SubTexture_Library()
+{
+	m_SubTextures.clear();
+}
+
 void SubTexture_Library::Add(const std::string& name, const std::shared_ptr<SubTexture>& sub_texture)
 {
 	if (!sub_texture_exists(name)) { Log::crit("Texture already exsits in library", __FILE__, __LINE__); }
@@ -31,6 +36,13 @@ void SubTexture_Library::Add(const std::shared_ptr<SubTexture>& false_sub_textur
 std::shared_ptr<SubTexture> SubTexture_Library::create(const std::string& name, const std::string& parent_name, const Texture_Data& parent, const glm::vec2 coords, const glm::vec2& CellSize, const glm::vec2& SpriteSize)
 {
 	auto sub_texture = SubTexture::create_from_coords(parent_name, parent, coords, CellSize, SpriteSize);
+	Add(name, sub_texture);
+	return sub_texture;
+}
+
+std::shared_ptr<SubTexture> SubTexture_Library::create_false(const std::string& name, const std::string& parent_name, const Texture_Data& parent)
+{
+	auto sub_texture = SubTexture::create_from_coords(parent_name, parent, { 0,0 }, { parent.size.x, parent.size.y });
 	Add(name, sub_texture);
 	return sub_texture;
 }

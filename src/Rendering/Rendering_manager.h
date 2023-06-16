@@ -3,6 +3,11 @@
 #include <glm/glm.hpp>
 #include <string>
 
+#include <map>
+#include <array>
+#include <memory>
+#include <vector>
+
 enum class render_type
 {
 	QUAD = 0,
@@ -32,14 +37,42 @@ struct render_object
 	float fade = 0.005f;
 
 	//Line only
-	const glm::vec3 p0 = glm::vec3(0.0f);
-	const glm::vec3 p1 = glm::vec3(0.0f);
+	glm::vec3 p0 = glm::vec3(0.0f);
+	glm::vec3 p1 = glm::vec3(0.0f);
+
+	//Text only
+	glm::vec3 pos = glm::vec3(0.0f);
+	float scale = 0.0f;
+	glm::vec2 size = glm::vec2(1.0f);
+	std::string text;
+	bool centered;
+};
+
+class render_queue //Batch by layer, then texture
+{
+private:
+	std::map<unsigned int, std::map<std::string, std::vector<std::shared_ptr<render_object>>>> m_queue;
+
+	std::vector<uint32_t> m_active_layers;
+	std::vector<std::string> m_active_textures;
+	std::array<uint32_t, 2> m_min_max;
+public:
+	void push(std::shared_ptr<render_object>& object);
+
+	void reset_queue();
+
+	friend class Rendering_manager;
 };
 
 class Rendering_manager
 {
 public:
-	static void submit_queue_object(render_object& object);
+	static void Init();
+	static void Shutdown();
+	static void submit_queue_object(std::shared_ptr<render_object>& object);
+	static std::vector<std::shared_ptr<render_object>> flush();
+	static bool get_finished();
+	static void reset();
 
 };
 

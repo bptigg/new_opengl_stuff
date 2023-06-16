@@ -23,9 +23,13 @@ private:
 		std::string fragment_source;
 	};
 
+	bool s_shutdown;
+
 public:
 	shader(const std::string& filepath, std::string name);
 	~shader();
+
+	void shutdown();
 
 	void bind() const;
 	void unbind() const;
@@ -53,6 +57,10 @@ private:
 class Shader_Library
 {
 public:
+
+	~Shader_Library();
+	void shutdown();
+
 	void Add(const std::string& name, const std::shared_ptr<shader>& shader);
 	void Add(const std::shared_ptr<shader>& shader);
 

@@ -8,6 +8,8 @@ Index_Buffer::Index_Buffer(const unsigned int* data, unsigned int count)
     GlCall(glGenBuffers(1, &m_renderer_id));
     GlCall(glBindBuffer(GL_ARRAY_BUFFER, m_renderer_id));
     GlCall(glBufferData(GL_ARRAY_BUFFER, m_count * sizeof(unsigned int), data, GL_STATIC_DRAW));
+
+    ib_shutdown = false;
 }
 
 Index_Buffer::Index_Buffer(unsigned int count)
@@ -38,6 +40,12 @@ Index_Buffer::Index_Buffer(unsigned int count)
 
 Index_Buffer::~Index_Buffer()
 {
+    if (!ib_shutdown) { GlCall(glDeleteBuffers(1, &m_renderer_id)) };
+}
+
+void Index_Buffer::shutdown()
+{
+    ib_shutdown = true;
     GlCall(glDeleteBuffers(1, &m_renderer_id));
 }
 

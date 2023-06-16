@@ -44,7 +44,7 @@ public:
 class Camera_Controller
 {
 public:
-	Camera_Controller(float apsect_ratio, bool rotation = false);
+	Camera_Controller(int width, int height, bool rotation = false);
 
 	void On_Update(Timestep ts);
 	void On_Event(Events::Event& e);
@@ -101,6 +101,7 @@ private:
 	float m_camera_rotation = 0.0f;
 	float m_camera_translation_speed = 1.0f;
 	float m_rotation_speed = 180.0f;
+	glm::vec2 resolution;
 
 	bool m_block;
 	Camera_Lock m_lock;
