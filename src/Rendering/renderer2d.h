@@ -98,9 +98,9 @@ public:
 	static void enable_blending();
 	static void disable_blending();
 
-	static SubTexture_Library* get_subtexture_library();
-	static Texture_Library* get_texture_library();
-	static Shader_Library* get_shader_library();
+	static std::shared_ptr<SubTexture_Library> get_subtexture_library();
+	static std::shared_ptr<Texture_Library> get_texture_library();
+	static std::shared_ptr<Shader_Library> get_shader_library();
 
 	static float get_line_width();
 	static void set_line_width(float width);

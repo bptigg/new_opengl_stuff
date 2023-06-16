@@ -8,6 +8,8 @@
 
 #include "../utilities/utility.h"
 
+#include "../Rendering/Post_Processing.h"
+
 #define _USE_MATH_DEFINES
 #include <math.h>
 
@@ -41,6 +43,7 @@ Application::Application(const Application_spec& spec)
 	//
 
 	renderer2d::Init();
+	s_instance = this;
 
 }
 
@@ -48,6 +51,7 @@ Application::~Application()
 {
 	renderer2d::Shutdown();
 	glfwTerminate();
+	Log::info("APPLICATION TERMINATED");
 }
 
 void Application::on_event(Events::Event& e)
@@ -105,17 +109,6 @@ void Application::Run()
 	}
 
 	renderer2d::get_shader_library()->get("MSAA")->set_uniform_1iv("u_textures", 32, samplers);
-
-	int* test = new int[10];
-	for (int i = 0; i < 10; i++)
-	{
-		test[i] = i;
-	}
-
-	Utility::find_in_array<int>(test, 10, 5);
-	Utility::find_in_array<int>(test, 10, 10);
-	delete[] test;
-
 
 	while (m_running)
 	{
@@ -191,6 +184,11 @@ void Application::Run()
 			glm::vec2 pos = { 640.0f, 500.0f };
 			renderer2d::draw_text(text, pos);
 
+			if (Framebufferspec spec = framebuffer->GetSpec(); spec.width != m_window->Get_Width() || spec.height != m_window->Get_Height())
+			{
+				framebuffer->Resize((uint32_t)m_window->Get_Width(), (uint32_t)m_window->Get_Height());
+			}
+
 
 			framebuffer->Bind();
 			framebuffer->clear_attachment(0, -1);
@@ -202,15 +200,19 @@ void Application::Run()
 
 			renderer2d::get_texture_library()->get("m_screen")->texture_id = framebuffer->get_color_attachment_renderer_id();
 
-			glm::mat4 mvp = glm::ortho(0.0f, 1280.0f, 0.0f, 720.0f, -1.0f, 1.0f);
+			/*
+			glm::mat4 mvp = glm::ortho(0.0f, 16.0f / 9.0f, 0.0f, 1.0f, -1.0f, 1.0f);
 			renderer2d::get_shader_library()->get("MSAA")->set_uniform_mat_4f("u_view_proj", mvp);
 
 			framebuffer->Unbind();
 
 			renderer2d::update_quad_shader("MSAA");
 
-			renderer2d::draw_quad({ 640.0f, 360.0f }, pic);
+			renderer2d::draw_quad({ 0.5f, 0.5f }, pic);
 			renderer2d::draw();
+			*/
+
+			PostProcessing::MSAA("MSAA", pic);
 
 		}
 		m_window->On_Update();

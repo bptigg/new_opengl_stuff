@@ -41,6 +41,7 @@ class Texture_Library
 public:
 
 	~Texture_Library();
+	void shutdown();
 
 	void Add(const std::string& name, std::shared_ptr<Texture_Data>& data);
 	

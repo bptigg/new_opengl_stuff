@@ -1,34 +1,8 @@
-#pragma once
-
+#include "shader.h"
 #include "Framebuffer.h"
 #include "renderer2d.h"
 
-#include <string>
-#include <vector>
-#include <utility>
-#include <memory>
-
-enum class PostProcessingEffect
+namespace PostProcessing
 {
-	SSAA = 0,
-	MSAA,
-	DEFFERED_LIGHTING,
-	DEFAULT
-};
-
-
-class PostProcessing
-{
-public:
-	static void Init();
-	static void Shutdown();
-
-	static void BeginScene(std::shared_ptr<Framebuffer> initial);
-	static std::shared_ptr<Framebuffer> EndScene();
-
-	static void AddStep(PostProcessingEffect effect);
-private:
-	static uint32_t get_unique();
-
-};
-
+	void MSAA(std::string msaa_shader, QUADrender_param& draw_cmd, std::shared_ptr<Framebuffer> output_framebuffer = nullptr);
+}

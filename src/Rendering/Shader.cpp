@@ -217,6 +217,11 @@ unsigned int shader::get_uniform_location(const std::string& name)
 
 Shader_Library::~Shader_Library()
 {
+    shutdown();
+}
+
+void Shader_Library::shutdown()
+{
     for (auto it = m_shaders.begin(); it != m_shaders.end(); it++)
     {
         it->second->shutdown();

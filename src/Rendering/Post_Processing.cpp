@@ -1,75 +1,30 @@
 #include "Post_Processing.h"
-#include "../utilities/utility.h"
+#include "../Core/Application.h"
 
-struct PostProcessingData
+void PostProcessing::MSAA(std::string msaa_shader, QUADrender_param& draw_cmd, std::shared_ptr<Framebuffer> output_framebuffer)
 {
-	std::shared_ptr<Framebuffer> m_ActiveFramebuffer;
-
-	std::unordered_map<PostProcessingEffect, std::shared_ptr<Framebuffer>> m_Framebuffers;
-	std::vector<PostProcessingEffect> m_pipeline;
-};
-
-PostProcessingData* s_data = nullptr;
-
-void PostProcessing::Init()
-{
-	s_data = new PostProcessingData;
-}
-
-void PostProcessing::Shutdown()
-{
-	s_data->m_Framebuffers.clear();
-	s_data->m_pipeline.clear();
-
-	delete s_data;
-}
-
-void PostProcessing::BeginScene(std::shared_ptr<Framebuffer> initial)
-{
-	s_data->m_ActiveFramebuffer = initial;
-
-	//if(s_)
-
-	for (int i = 0; i < s_data->m_pipeline.size(); i++)
+	if (output_framebuffer != nullptr)
 	{
-		auto buffer = s_data->m_Framebuffers[s_data->m_pipeline[i]];
-		auto attachments = buffer->GetSpec().Attachments.Attachments.size();
-		for (size_t e = 0; e < attachments; e++)
+		output_framebuffer->Bind();
+		for (int i = 0; i < output_framebuffer->GetSpec().Attachments.Attachments.size(); i++)
 		{
-			buffer->clear_attachment(e, -1);
+			output_framebuffer->clear_attachment(i, -1);
 		}
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	}
-}
 
-std::shared_ptr<Framebuffer> PostProcessing::EndScene()
-{
-	return s_data->m_ActiveFramebuffer;
-}
+	float window_dim[2] = { Application::Get().Get_window().Get_Width(), Application::Get().Get_window().Get_Height()};
+	float aspect_ratio = window_dim[0] / window_dim[1];
 
-void PostProcessing::AddStep(PostProcessingEffect effect)
-{
-	s_data->m_pipeline.push_back(effect);
-}
-
-uint32_t PostProcessing::get_unique()
-{
-	uint32_t unique_types = 0;
+	glm::mat4 mvp = glm::ortho(0.0f, aspect_ratio, 0.0f, 1.0f, -1.0f, 1.0f);
+	renderer2d::get_shader_library()->get(msaa_shader)->set_uniform_mat_4f("u_view_proj", mvp);
 	
-	PostProcessingEffect* types = new PostProcessingEffect[(int)PostProcessingEffect::DEFAULT];
+	renderer2d::update_quad_shader(msaa_shader);
+	renderer2d::draw_quad({ 0.5f,0.5f }, draw_cmd);
+	renderer2d::draw();
 
-	for (int i = 0; i < s_data->m_pipeline.size(); i++)
+	if (output_framebuffer != nullptr)
 	{
-		if (Utility::find_in_array<PostProcessingEffect>(types, (int)PostProcessingEffect::DEFAULT, s_data->m_pipeline[i]))
-		{
-			continue;
-		}
-		else
-		{
-			unique_types++;
-		}
+		output_framebuffer->Unbind();
 	}
-
-	delete[] types;
-
-	return unique_types;
 }

@@ -108,6 +108,11 @@ void Texture::unbind(unsigned int slot)
 
 Texture_Library::~Texture_Library()
 {
+	shutdown();
+}
+
+void Texture_Library::shutdown()
+{
 	for (auto it = m_textures.begin(); it != m_textures.end(); it++)
 	{
 		Texture::delete_texture(it->second->texture_id);

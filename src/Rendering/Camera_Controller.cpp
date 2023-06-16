@@ -1,5 +1,7 @@
 #include "Camera_Controller.h"
 
+//update camerar controller to use relative coordinates rather than actual i.e glm::mat4 mvp = glm::ortho(0.0f, 16.0f/9.0f, 0.0f, 1.0f, -1.0f, 1.0f);
+
 
 Camera_Controller::Camera_Controller(int width, int height, bool rotation)
 	:m_aspect_ratio((float)width / (float)height), m_camera(-width / 2.0f * m_zoom_level, width / 2.0f * m_zoom_level, -height / 2.0f * m_zoom_level, height / 2.0f * m_zoom_level)
