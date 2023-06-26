@@ -164,7 +164,7 @@ void Framebuffer::Invalidate()
         }
     }
 
-    if (m_color_attachments.size() > 1)
+    if (m_color_attachments.size() >= 1)
     {
         GLenum buffers[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
 
@@ -206,6 +206,11 @@ void Framebuffer::Resize(uint32_t width, uint32_t height)
     m_specification.width = width;
     m_specification.height = height;
 
+    for (int i = 0; i < m_color_attachments.size(); i++)
+    {
+        clear_attachment(i, 0);
+    }
+
     Invalidate();
 }
 
@@ -221,6 +226,12 @@ void Framebuffer::clear_attachment(uint32_t attachment_index, int value)
 {
     auto& spec = m_color_attachment_specifications[attachment_index];
     glClearTexImage(m_color_attachments[attachment_index], 0, Utils::Texture_Format_To_Gl(spec.TextureFormat), GL_INT, &value);
+}
+
+void Framebuffer::clear_depth_attachment(int value)
+{
+    auto& spec = m_depth_attachment_specfication;
+    glClearTexImage(m_depth_attachment, 0, Utils::Texture_Format_To_Gl(spec.TextureFormat), GL_INT, &value);
 }
 
 std::shared_ptr<Framebuffer> Framebuffer::Create(const Framebufferspec& spec)

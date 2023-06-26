@@ -28,7 +28,7 @@ void main()
 {
     int tex_index = int(v_tex_index);
     ivec2 texture_position = ivec2(gl_FragCoord.x, gl_FragCoord.y);
-
+    
     vec4 samples[16];
     for (int i = 0; i < u_samples; i++)
     {

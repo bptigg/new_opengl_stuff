@@ -45,6 +45,5 @@ void main()
 {
 	int index = int(Output.tex_index);
 	o_color = vec4(Output.color.r, Output.color.g, Output.color.b, Output.color.a * texture(u_textures[index], Output.tex_coord).r);
-	//o_color = texture(u_textures[index], Output.tex_coord) * Output.color;
 
 }

@@ -15,6 +15,7 @@ struct Texture_Data
 	uint32_t slot = 0;
 	bool alive = true;
 	bool multisampled = false;
+	bool always_rebind = false;
 };
 
 class Texture
@@ -47,6 +48,7 @@ public:
 	
 	std::shared_ptr<Texture_Data> Load(std::string& name, std::string& filepath);
 	std::shared_ptr<Texture_Data> get(const std::string& name);
+	void update_texture(const std::string& name, std::shared_ptr<Texture_Data> texture);
 
 	bool texture_exists(const std::string& name) const;
 private:

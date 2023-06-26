@@ -72,25 +72,44 @@ void Application::Run()
 	std::cout << max_samples << std::endl;
 
 	//temp code
-	float old_1 = 0, old_2 = 0, old_3 = 0;
 	Framebufferspec fbspec;
-	fbspec.Attachments = { FramebufferTextureFormat::RGBA8, FramebufferTextureFormat::RED_INTEGER, FramebufferTextureFormat::Depth };
+	fbspec.Attachments = { FramebufferTextureFormat::RGBA8, FramebufferTextureFormat::RGBA8, FramebufferTextureFormat::RGBA8};
 	fbspec.width = 1280;
 	fbspec.height = 720;
 	fbspec.samples = 8;
 	auto framebuffer = Framebuffer::Create(fbspec);
 
+	Framebufferspec fbspec2;
+	fbspec2.Attachments = { FramebufferTextureFormat::RGBA8 };
+	fbspec2.width = 1280;
+	fbspec2.height = 720;
+	auto framebuffer2 = Framebuffer::Create(fbspec2);
+
 	std::shared_ptr<Texture_Data> screen = std::make_shared<Texture_Data>(Texture_Data());
-	screen->texture_id = framebuffer->get_color_attachment_renderer_id();
+	screen->texture_id = framebuffer->get_color_attachment_renderer_id(0);
 	screen->size = { framebuffer->GetSpec().width, framebuffer->GetSpec().height };
 	screen->bound = false;
 	screen->slot = 0;
 	screen->alive = true;
 	screen->multisampled = true;
+	screen->always_rebind = true;
 
 	std::string screen_name = "m_screen";
 	renderer2d::get_texture_library()->Add(screen_name, screen);
 	renderer2d::get_subtexture_library()->create("s_screen", screen_name, *screen, { 0,0 }, { screen->size.x, screen->size.y }, { 1,1 });
+
+	std::shared_ptr<Texture_Data> screen2 = std::make_shared<Texture_Data>(Texture_Data());
+	screen2->texture_id = framebuffer->get_color_attachment_renderer_id(0);
+	screen2->size = { framebuffer->GetSpec().width, framebuffer->GetSpec().height };
+	screen2->bound = false;
+	screen2->slot = 0;
+	screen2->alive = true;
+	screen2->multisampled = false;
+	screen2->always_rebind = true;
+
+	std::string screen_name2 = "m_screen2";
+	renderer2d::get_texture_library()->Add(screen_name2, screen2);
+	renderer2d::get_subtexture_library()->create("s_screen2", screen_name2, *screen2, { 0,0 }, { screen2->size.x, screen2->size.y }, { 1,1 });
 
 	QUADrender_param pic;
 	pic.color = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -101,6 +120,7 @@ void Application::Run()
 
 	renderer2d::get_shader_library()->Load("MSAA", "res/shaders/MSAA.glsl");
 	renderer2d::get_shader_library()->get("MSAA")->set_uniform_1i("u_samples", fbspec.samples);
+	renderer2d::get_shader_library()->Load("Lighting", "res/shaders/Lighting.glsl");
 
 	int samplers[32];
 	for (int i = 0; i < 32; i++)
@@ -124,81 +144,85 @@ void Application::Run()
 		if (!m_minimized)
 		{
 			m_camera->On_Update(time);
-			CIRCLErender_param test_2;
-			test_2.color = { 0.4f, 0.3f, 0.7f, 1.0f };
-			test_2.thickness = 0.5f;
-			test_2.fade = 0.005f;
-			test_2.layer = 1;
 
-			glm::vec3 translation = { 720.0f, 480.0f, 1.0f };
-			glm::vec3 scale = { 30.0f, 30.0f, 1.0f };
+			pic.Texture = "s_screen";
+			
+			QUADrender_param square;
+			square.color = { 0.5f, 0.5f, 0.5f, 0.0f };
+			square.layer = 1;
+			square.rotation = 0;
+			square.size = { 60.0f, 60.0f };
+			square.Texture = "";
 
-			glm::mat4 transform = glm::translate(glm::mat4(1.0f), translation) * glm::scale(glm::mat4(1.0f), scale);
-			test_2.transform = transform;
+			for (int i = 0; i < 5; i++)
+			{
+				for (int e = 0; e < 5; e++)
+				{
+					float x = -120 + (i * 60.0f);
+					float y = 120 - (e * 60.0f);
+					if (!(i == 2 && e == 2))
+					{
+						renderer2d::draw_quad({ x, y }, square);
+					}
+				}
+			}
 
-			renderer2d::draw_circle(test_2);
+			QUADrender_param square2;
+			square2.color = { 0.5f, 0.8f, 0.2f, 1.0f };
+			square2.layer = 1;
+			square2.rotation = 0;
+			square2.size = { 60.0f, 60.0f };
+			square2.Texture = "";
 
-			QUADrender_param test;
-			test.color = { 0.5f, 0.2f, 0.3f, 1.0f };
-			test.layer = 1;
-			test.size = {60.0f, 60.0f };
-			test.rotation = old_1 + 0.4 * time;
-			old_1 = test.rotation;
-			test.Texture = "";
+			for (int i = 0; i < 7; i++)
+			{
+				for (int e = 0; e < 7; e++)
+				{
+					float x = -180 + (e * 60.0f);
+					float y = 180 - (i * 60.0f);
+					if (i == 0)
+					{
+						renderer2d::draw_quad({ x,y }, square2);
+					}
+					else if (i > 0 && (e == 0 || e == 6))
+					{
+						renderer2d::draw_quad({ x,y }, square2);
+					}
+					else if (i == 6)
+					{
+						renderer2d::draw_quad({ x,y }, square2);
+					}
+				}
+			}
 
-			renderer2d::draw_quad({ 640.0f , 360.0f }, test);
+			QUADrender_param square3;
+			square3.color = { 0.9f, 0.2f, 0.4f, 0.5f };
+			square3.layer = 1;
+			square3.rotation = 0;
+			square3.size = { 60.0f, 60.0f };
+			square3.Texture = "";
 
-			test.color = { 0.6f, 0.8f, 0.2f, 0.8f };
-			test.layer = 2;
-			test.size = { 100.0f, 53.0f };
-			test.rotation = old_2 + 0.2 * time;
-			old_2 = test.rotation;
-			test.Texture = "";
-
-			renderer2d::draw_quad({ 400.0f , 100.0f }, test);
-
-			test.color = { 0.0f, 0.0f, 1.0f, 0.2f };
-			test.layer = 3;
-			test.size = { 30.0f, 30.0f };
-			test.rotation = old_3 + 1*time;
-			old_3 = test.rotation;
-			test.Texture = "";
-
-			renderer2d::draw_quad({ 640.0f , 360.0f }, test);
-
-			LINErender_param line;
-			line.color = { 1.0f, 0.0f, 0.5f, 1.0f };
-			line.layer = 2;
-			line.p0 = { 200.0f, 200.0f, 1.0f };
-			line.p1 = { 800.0f, 400.0f, 1.0f };
-			renderer2d::draw_line(line);
-
-			Textrender_param text;
-			text.centered = true;
-			text.color = { 0.5f, 0.6f, 0.2f, 1.0f };
-			text.layer = 3;
-			text.scale = 100.0f;
-			//text.text = "Hello world";
-			text.text = "hello";
-
-			glm::vec2 pos = { 640.0f, 500.0f };
-			renderer2d::draw_text(text, pos);
+			renderer2d::draw_quad({ 0,0 }, square3);
 
 			if (Framebufferspec spec = framebuffer->GetSpec(); spec.width != m_window->Get_Width() || spec.height != m_window->Get_Height())
 			{
 				framebuffer->Resize((uint32_t)m_window->Get_Width(), (uint32_t)m_window->Get_Height());
+				framebuffer2->Resize((uint32_t)m_window->Get_Width(), (uint32_t)m_window->Get_Height());
+				pic.size = { (uint32_t)m_window->Get_Width(), (uint32_t)m_window->Get_Height() };
 			}
 
 
 			framebuffer->Bind();
-			framebuffer->clear_attachment(0, -1);
-			framebuffer->clear_attachment(1, -1);
-			glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+			framebuffer->clear_attachment(0, 0);
+			framebuffer->clear_attachment(1, 0);
+			framebuffer->clear_attachment(2, 0);
+			glClear(GL_COLOR_BUFFER_BIT);
 			renderer2d::End_Scene();
 
 			framebuffer->Unbind();
 
-			renderer2d::get_texture_library()->get("m_screen")->texture_id = framebuffer->get_color_attachment_renderer_id();
+			renderer2d::get_texture_library()->get("m_screen")->texture_id = framebuffer->get_color_attachment_renderer_id(0);
+			//renderer2d::get_texture_library()->get("m_screen")->texture_id = framebuffer->get_depth_attachment_renderer_id();
 
 			/*
 			glm::mat4 mvp = glm::ortho(0.0f, 16.0f / 9.0f, 0.0f, 1.0f, -1.0f, 1.0f);
@@ -212,7 +236,30 @@ void Application::Run()
 			renderer2d::draw();
 			*/
 
-			PostProcessing::MSAA("MSAA", pic);
+			PostProcessing::MSAA("MSAA", pic, framebuffer->GetSpec(), framebuffer2);
+
+			glm::mat4 mvp = glm::ortho(0.0f, 16.0f / 9.0f, 0.0f, 1.0f, -1.0f, 1.0f);
+			renderer2d::get_shader_library()->get("Lighting")->set_uniform_mat_4f("u_view_proj", mvp);
+			
+			renderer2d::get_texture_library()->get("m_screen2")->texture_id = framebuffer2->get_color_attachment_renderer_id(0);
+			//renderer2d::get_texture_library()->get("m_screen2")->texture_id = framebuffer->get_color_attachment_renderer_id(1);
+			
+			//renderer2d::unbind_texture("m_screen2");
+			//int albedo = (int)renderer2d::bind_texture("m_screen2");
+			//int depth = (int)renderer2d::bind_texture("m_screen2");
+			
+			//renderer2d::get_shader_library()->get("Lighting")->set_uniform_1i("gDepth", depth);
+			//renderer2d::get_shader_library()->get("Lighting")->set_uniform_1i("gAlbedo", albedo);
+			
+			pic.Texture = "s_screen2";
+			
+			glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+			
+			renderer2d::update_quad_shader("Quad");
+			renderer2d::draw_quad({ 0.5f, 0.5f }, pic);
+			renderer2d::draw();
+			
+			pic.Texture = "s_screen";
 
 		}
 		m_window->On_Update();

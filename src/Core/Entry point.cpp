@@ -9,5 +9,4 @@ int main(int argc, char** argv)
 	auto app = create_application({ argc, argv });
 	app->Run();
 	delete app;
-	std::cin.get();
 }

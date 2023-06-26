@@ -144,6 +144,11 @@ std::shared_ptr<Texture_Data> Texture_Library::get(const std::string& name)
 	return m_textures[name];
 }
 
+void Texture_Library::update_texture(const std::string& name, std::shared_ptr<Texture_Data> texture)
+{
+	get(name) = texture;
+} 
+
 bool Texture_Library::texture_exists(const std::string& name) const
 {
 	return m_textures.find(name) == m_textures.end();

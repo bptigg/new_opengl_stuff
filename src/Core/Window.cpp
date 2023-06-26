@@ -82,8 +82,6 @@ void Window::Init(const properties& props)
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	
 	//here until I remove it because framebuffers;
-	glfwWindowHint(GLFW_SAMPLES, 4);
-	glEnable(GL_MULTISAMPLE);
 
 	m_window = glfwCreateWindow((int)props.m_width, (int)props.m_height, props.m_name.c_str(), nullptr, nullptr);
 

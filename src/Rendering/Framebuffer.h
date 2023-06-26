@@ -63,12 +63,20 @@ public:
 	int Read_Pixel(uint32_t attachment_index, int x, int y);
 
 	void clear_attachment(uint32_t attachment_index, int value);
+	void clear_depth_attachment(int value);
 	
 	uint32_t get_color_attachment_renderer_id(uint32_t index = 0) const {
 		if (index > m_color_attachments.size()) {
 			Log::error("Index out of range", __FILE__, __LINE__);
 		}
 		return m_color_attachments[index];
+	}
+
+	uint32_t get_depth_attachment_renderer_id(uint32_t index = 0) const {
+		if (index > m_color_attachments.size()) {
+			Log::error("Index out of range", __FILE__, __LINE__);
+		}
+		return m_depth_attachment;
 	}
 
 	inline const Framebufferspec& GetSpec() const { return m_specification; };

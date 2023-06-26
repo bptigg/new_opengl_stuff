@@ -105,6 +105,9 @@ public:
 	static float get_line_width();
 	static void set_line_width(float width);
 
+	static float bind_texture(std::string texture);
+	static void unbind_texture(std::string texture);
+
 private:
 
 	static float get_texture_index(std::string texture);

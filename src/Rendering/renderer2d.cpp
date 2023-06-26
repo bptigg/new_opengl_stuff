@@ -466,12 +466,18 @@ float renderer2d::get_texture_index(std::string texture)
 	return texture_index;
 }
 
+float renderer2d::bind_texture(std::string texture)
+{
+	float index = get_texture_index(texture);
+	Bind_Texture(texture, index);
+	return index;
+}
+
 void renderer2d::Bind_Texture(std::string texture, uint32_t slot)
 {
 	std::shared_ptr<Texture_Data> data = s_TexLibary->get(texture);
 	if (data->bound == false)
 	{
-
 		if (s_data.assigned_slots[slot] != "")
 		{
 			Unbind_Texture(s_data.assigned_slots[slot], slot);
@@ -494,6 +500,25 @@ void renderer2d::Bind_Texture(std::string texture, uint32_t slot)
 		data->slot = slot;
 
 	}
+	else if (data->always_rebind == true)
+	{
+		if (s_data.assigned_slots[slot] != "")
+		{
+			Unbind_Texture(s_data.assigned_slots[slot], slot);
+		}
+
+		Texture::bind(data->texture_id, slot, data->multisampled);
+		data->bound = true;
+		data->slot = slot;
+
+		s_data.assigned_slots[slot] = texture;
+	}
+}
+
+void renderer2d::unbind_texture(std::string texture)
+{
+	std::shared_ptr<Texture_Data> data = s_TexLibary->get(texture);
+	Unbind_Texture(texture, data->slot);
 }
 
 void renderer2d::Unbind_Texture(std::string texture, uint32_t slot)
@@ -504,6 +529,7 @@ void renderer2d::Unbind_Texture(std::string texture, uint32_t slot)
 		Texture::unbind(slot);
 		data->bound = false;
 		data->slot = 0;
+		s_data.assigned_slots[slot] = "";
 	}
 	else if (data->bound == true && data->slot != slot)
 	{
