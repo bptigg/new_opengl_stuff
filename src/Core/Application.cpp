@@ -121,6 +121,7 @@ void Application::Run()
 	renderer2d::get_shader_library()->Load("MSAA", "res/shaders/MSAA.glsl");
 	renderer2d::get_shader_library()->get("MSAA")->set_uniform_1i("u_samples", fbspec.samples);
 	renderer2d::get_shader_library()->Load("Lighting", "res/shaders/Lighting.glsl");
+	renderer2d::get_shader_library()->get("Lighting")->set_uniform_mat_4f("u_view_proj", m_camera->get_camera().Get_View_Projection_Matrix());
 
 	int samplers[32];
 	for (int i = 0; i < 32; i++)
@@ -129,6 +130,7 @@ void Application::Run()
 	}
 
 	renderer2d::get_shader_library()->get("MSAA")->set_uniform_1iv("u_textures", 32, samplers);
+	renderer2d::get_shader_library()->get("Lighting")->set_uniform_1iv("u_textures", 32, samplers);
 
 	while (m_running)
 	{
@@ -238,26 +240,28 @@ void Application::Run()
 
 			PostProcessing::MSAA("MSAA", pic, framebuffer->GetSpec(), framebuffer2);
 
-			glm::mat4 mvp = glm::ortho(0.0f, 16.0f / 9.0f, 0.0f, 1.0f, -1.0f, 1.0f);
-			renderer2d::get_shader_library()->get("Lighting")->set_uniform_mat_4f("u_view_proj", mvp);
+			//glm::mat4 mvp = glm::ortho(0.0f, 16.0f / 9.0f, 0.0f, 1.0f, -1.0f, 1.0f);
+			//renderer2d::get_shader_library()->get("Lighting")->set_uniform_mat_4f("u_view_proj", mvp);
 			
 			renderer2d::get_texture_library()->get("m_screen2")->texture_id = framebuffer2->get_color_attachment_renderer_id(0);
 			//renderer2d::get_texture_library()->get("m_screen2")->texture_id = framebuffer->get_color_attachment_renderer_id(1);
 			
 			//renderer2d::unbind_texture("m_screen2");
-			//int albedo = (int)renderer2d::bind_texture("m_screen2");
+			int albedo = (int)renderer2d::bind_texture("m_screen2");
 			//int depth = (int)renderer2d::bind_texture("m_screen2");
 			
 			//renderer2d::get_shader_library()->get("Lighting")->set_uniform_1i("gDepth", depth);
-			//renderer2d::get_shader_library()->get("Lighting")->set_uniform_1i("gAlbedo", albedo);
+			renderer2d::get_shader_library()->get("Lighting")->set_uniform_1i("gAlbedo", albedo);
 			
 			pic.Texture = "s_screen2";
+			//pic.Texture = "";
 			
 			glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 			
-			renderer2d::update_quad_shader("Quad");
+			renderer2d::update_quad_shader("Lighting");
+			//renderer2d::Begin_Scene(m_camera->get_camera());
 			renderer2d::draw_quad({ 0.5f, 0.5f }, pic);
-			renderer2d::draw();
+			renderer2d::End_Scene();
 			
 			pic.Texture = "s_screen";
 
