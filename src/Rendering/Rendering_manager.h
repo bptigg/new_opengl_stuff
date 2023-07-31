@@ -13,22 +13,27 @@ enum class render_type
 	QUAD = 0,
 	CIRCLE,
 	LINE,
-	TEXT, //It exists but won't be implemented until the others are
+	TEXT,
+	GEOMETRY,
 	DEFAULT
 };
+
+extern struct Geometry_Vertex;
+extern class Index_Buffer;
 
 struct render_object
 {
 	render_type type = render_type::DEFAULT;
+	std::array<bool, 2> FlipTexture = {false, false}; //Flip Horizontly Flip Vertically 
 
 	//All types
 	glm::vec4 color = glm::vec4(1.0f);
 	int layer = 0;
 
-	//QUAD and CIRCLE
+	//QUAD and CIRCLE and GEOMETRY
 	glm::mat4 transform = glm::mat4(1.0f);
 
-	//QUAD only
+	//QUAD and GEOMETRY only
 	std::string Texture = "";
 	float tiling_factor = 1.0f;
 
@@ -46,6 +51,10 @@ struct render_object
 	glm::vec2 size = glm::vec2(1.0f);
 	std::string text;
 	bool centered;
+
+	//GEOMETRY only
+	std::vector<Geometry_Vertex> verticies;
+	std::shared_ptr<Index_Buffer> ib;
 };
 
 class render_queue //Batch by layer, then texture

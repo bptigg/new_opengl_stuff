@@ -42,9 +42,18 @@ void Vertex_Array::add_index_buffer(const std::shared_ptr<Index_Buffer>& ib)
 	unbind();
 }
 
+const std::shared_ptr<Index_Buffer>& Vertex_Array::get_ib()
+{
+	return m_ib;
+}
+
 void Vertex_Array::bind() const
 {
 	GlCall(glBindVertexArray(m_renderer_id));
+	if (m_ib != nullptr)
+	{
+		m_ib->bind();
+	}
 }
 
 void Vertex_Array::unbind() const

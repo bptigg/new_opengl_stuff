@@ -24,5 +24,6 @@ void Orthographic_camera::Recalculate_View_Matrix()
 		m_View_Projection_Matrix_cache = m_Projection_Matrix * m_View_Matrix;
 
 		update_view_matrix = false;
+		view_matrix_updated = true;
 	}
 }

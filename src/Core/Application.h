@@ -35,8 +35,11 @@ public:
 	//void push_layer(Layer* layer);
 	//void push_overlay(Layer* layer);
 
+	const Camera_Controller* Get_Camera() const { return m_camera; }
+	Camera_Controller*& Get_Camera() { return m_camera; }
 	Window& Get_window() { return *m_window; }
 	static Application& Get() { return *s_instance; }
+
 
 	void Run();
 private:

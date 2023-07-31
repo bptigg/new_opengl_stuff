@@ -49,6 +49,16 @@ void Index_Buffer::shutdown()
     GlCall(glDeleteBuffers(1, &m_renderer_id));
 }
 
+void Index_Buffer::update_index_buffer(const unsigned int* data, unsigned int count)
+{
+    GlCall(glDeleteBuffers(1, &m_renderer_id));
+
+    m_count = count;
+    GlCall(glGenBuffers(1, &m_renderer_id));
+    GlCall(glBindBuffer(GL_ARRAY_BUFFER, m_renderer_id));
+    GlCall(glBufferData(GL_ARRAY_BUFFER, m_count * sizeof(unsigned int), data, GL_STATIC_DRAW));
+}
+
 void Index_Buffer::bind() const 
 {
     GlCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_renderer_id));
@@ -57,4 +67,14 @@ void Index_Buffer::bind() const
 void Index_Buffer::unbind() const 
 {
     GlCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0));
+}
+
+void Index_Buffer::set_custom(bool custom)
+{
+    m_custom = custom;
+}
+
+bool Index_Buffer::get_custom()
+{
+    return m_custom;
 }

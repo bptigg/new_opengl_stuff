@@ -2,14 +2,15 @@
 
 #include "Vertex.h"
 #include "Rendering_manager.h"
-//#include "SubTexture.h"
-//#include "Shader.h"
+#include "../Core/Geometry.h"
 
 #include "Vertex_Array.h"
 #include "Index_Buffer.h"
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+
+#include "../utilities/utility.h"
 
 #include <array>
 #include <cmath>
@@ -34,6 +35,13 @@ struct render_data
 	std::shared_ptr<shader> Quad_shader;
 
 	std::shared_ptr<Index_Buffer> Quad_IB;
+
+	uint32_t Geometry_index_count = 0;
+	QuadVertex* GeoVertexBufferBase = nullptr;
+	QuadVertex* GeoVertexBuffer = nullptr;
+	std::shared_ptr<Vertex_Array> Geo_VA0;
+	std::shared_ptr<Vertex_Buffer> Geo_VB;
+	std::shared_ptr<shader> Geo_shader;
 
 	uint32_t Circle_index_count = 0;
 	CircleVertex* CircleVertexBufferBase = nullptr;
@@ -155,7 +163,7 @@ void renderer2d::Init()
 	FT_Done_FreeType(ft);
 
 	Log::info("Text initialised");
-	s_data.Quad_VB	=std::shared_ptr<Vertex_Buffer>(new Vertex_Buffer(s_data.max_verticies * sizeof(QuadVertex)));
+	s_data.Quad_VB	= std::shared_ptr<Vertex_Buffer>(new Vertex_Buffer(s_data.max_verticies * sizeof(QuadVertex)));
 	s_data.Qaud_VA0 = std::shared_ptr<Vertex_Array>(new Vertex_Array());
 	{
 		Vertex_Buffer_Layout quad_layout;
@@ -170,6 +178,19 @@ void renderer2d::Init()
 	s_data.Quad_IB = std::shared_ptr<Index_Buffer>(new Index_Buffer(s_data.max_indicies));
 	s_data.Qaud_VA0->add_index_buffer(s_data.Quad_IB);
 	s_data.QuadVertexBufferBase = new QuadVertex[s_data.max_verticies];
+
+	s_data.Geo_VB = std::shared_ptr<Vertex_Buffer>(new Vertex_Buffer(s_data.max_verticies * sizeof(QuadVertex)));
+	s_data.Geo_VA0 = std::shared_ptr<Vertex_Array>(new Vertex_Array());
+	{
+		Vertex_Buffer_Layout Geo_layout;
+		Geo_layout.Push<float>(3);
+		Geo_layout.Push<float>(4);
+		Geo_layout.Push<float>(2);
+		Geo_layout.Push<float>(1);
+		Geo_layout.Push<float>(1);
+		s_data.Geo_VA0->add_buffer(*s_data.Geo_VB, Geo_layout);
+	}
+	s_data.GeoVertexBufferBase = new QuadVertex[s_data.max_verticies];
 
 	s_data.Circle_VB  = std::shared_ptr<Vertex_Buffer>(new Vertex_Buffer(s_data.max_verticies * sizeof(CircleVertex)));
 	s_data.Circle_VA0 = std::shared_ptr<Vertex_Array>(new Vertex_Array());
@@ -243,6 +264,9 @@ void renderer2d::Init()
 	s_ShaderLibrary->Load("Text", "res/shaders/Text.glsl");
 	s_data.Text_shader = s_ShaderLibrary->get("Text");
 
+	s_ShaderLibrary->Load("Basic_Polygon", "res/shaders/Basic_Polygon.glsl");
+	s_data.Geo_shader = s_ShaderLibrary->get("Basic_Polygon");
+
 	//temp thing 
 
 	glm::mat4 mvp = glm::ortho(0.0f, 1280.0f, 0.0f, 720.0f, -1.0f, 1.0f);
@@ -255,6 +279,7 @@ void renderer2d::Init()
 	
 	//s_data.Text_shader->set_uniform_mat_4f("u_view_proj", mvp);
 	s_data.Text_shader->set_uniform_1iv("u_textures", 32, samplers);
+	s_data.Geo_shader->set_uniform_1iv("u_textures", 32, samplers);
 	
 
 	s_data.Quad_Vertex_Positions[0] = { -0.5f, -0.5f, 0.0f, 1.0f };
@@ -273,6 +298,9 @@ void renderer2d::Shutdown()
 	s_data.Quad_VB->shutdown();
 	s_data.Qaud_VA0->shutdown();
 
+	s_data.Geo_VB->shutdown();
+	s_data.Geo_VB->shutdown();
+
 	s_data.Circle_VB->shutdown();
 	s_data.Circle_VA0->shutdown();
 
@@ -286,6 +314,7 @@ void renderer2d::Shutdown()
 	delete[] s_data.CircleVertexBufferBase;
 	delete[] s_data.LineVertexBufferBase;
 	delete[] s_data.TextVertexBufferBase;
+	delete[] s_data.GeoVertexBufferBase;
 
 	Rendering_manager::Shutdown();
 	s_ShaderLibrary->shutdown();
@@ -303,6 +332,7 @@ void renderer2d::Begin_Scene(const Orthographic_camera& camera)
 	s_data.Circle_shader->set_uniform_mat_4f("u_view_proj", mvp);
 	s_data.Line_shader->set_uniform_mat_4f("u_view_proj", mvp);
 	s_data.Text_shader->set_uniform_mat_4f("u_view_proj", mvp);
+	s_data.Geo_shader->set_uniform_mat_4f("u_view_proj", mvp);
 }
 
 void renderer2d::End_Scene()
@@ -344,8 +374,45 @@ void renderer2d::draw_quad(const glm::mat4& transform, QUADrender_param& render_
 	quad->Texture = (render_data.Texture != "") ? render_data.Texture : "s_white";
 	quad->tiling_factor = render_data.tiling_factor;
 	quad->layer = render_data.layer;
+	quad->FlipTexture = { false, false };
 
 	Rendering_manager::submit_queue_object(quad);
+}
+
+void renderer2d::draw_polygon(Geometry& geometry)
+{
+	glm::mat4 transform = glm::mat4(1.0f);
+	if (geometry.get_rotation() == 0.0f)
+	{
+		transform =	glm::translate(glm::mat4(1.0f), geometry.get_position())
+				  * glm::scale(glm::mat4(1.0f), {geometry.get_scale(), geometry.get_scale(), 1.0f});
+	}
+	else
+	{
+		float rot = geometry.get_rotation();
+		rot = (rot > 2 * glm::pi<float>()) ? std::fmod(rot, glm::pi<float>()) : rot;
+		transform = glm::translate(glm::mat4(1.0f), geometry.get_position())
+				  * glm::rotate(glm::mat4(1.0f), rot, { 0.0f, 0.0f, 1.0f })
+		          * glm::scale(glm::mat4(1.0f), { geometry.get_scale(), geometry.get_scale(), 1.0f });
+	}
+
+	std::shared_ptr<render_object>geo(new render_object);
+	geo->type = render_type::GEOMETRY;
+	geo->transform = transform;
+	
+	std::vector<Geometry_Vertex> verticies;
+	auto base = geometry.get_vertices();
+	for (int i = 0; i < geometry.get_num_vertices(); i++)
+	{
+		verticies.push_back(base[i]);
+	}
+	geo->verticies = verticies;
+	geo->layer = geometry.get_layer();
+	geo->ib = geometry.get_index_buffer();
+	geo->Texture = "s_white";
+	geo->FlipTexture = { false, false };
+
+	Rendering_manager::submit_queue_object(geo);
 }
 
 void renderer2d::draw_circle(CIRCLErender_param& render_data)
@@ -565,6 +632,9 @@ void renderer2d::draw()
 				case render_type::TEXT:
 					m_draw_text(*draw_calls[i]);
 					break;
+				case render_type::GEOMETRY:
+					m_draw_polygon(*draw_calls[i]);
+					break;
 				default:
 					Log::warning("UNKNOWN DRAW TYPE");
 					break;
@@ -592,7 +662,11 @@ void renderer2d::Flush()
 	}
 	if (s_data.Text_index_count)
 	{
-		Flush_Text(); //Need to fix the texture binding stuff
+		Flush_Text(); 
+	}
+	if (s_data.Geometry_index_count)
+	{
+		Flush_Geo();
 	}
 }
 
@@ -612,6 +686,32 @@ void renderer2d::Flush_Quads()
 	s_data.stats.DrawCalls++;
 
 	s_data.Quad_VB->clear_buffer();
+}
+
+void renderer2d::Flush_Geo()
+{
+	uint32_t data_size = (uint32_t)((uint8_t*)s_data.GeoVertexBuffer - (uint8_t*)s_data.GeoVertexBufferBase);
+	s_data.Geo_VB->add_to_buffer((void*)s_data.GeoVertexBufferBase, data_size);
+
+	for (uint32_t i = 0; i < s_data.CurrentSlotIndex; i++)
+	{
+		Bind_Texture(s_data.texture_slots[i], i);
+	}
+
+	s_data.Geo_shader->bind();
+	s_data.Geo_VA0->bind();
+
+	if (s_data.Geo_VA0->get_ib()->get_custom())
+	{
+		GlCall(glDrawElements(GL_TRIANGLES, s_data.Geometry_index_count, GL_UNSIGNED_INT, nullptr));
+	}
+	else
+	{
+		GlCall(glDrawElements(GL_TRIANGLES, s_data.Geometry_index_count, GL_UNSIGNED_INT, nullptr));
+	}
+	s_data.stats.DrawCalls++;
+
+	s_data.Geo_VB->clear_buffer();
 }
 
 void renderer2d::Flush_Circles()
@@ -686,7 +786,22 @@ void renderer2d::m_draw_quad(render_object& quad_obj)
 	{
 		s_data.QuadVertexBufferPtr->Position = quad_obj.transform * s_data.Quad_Vertex_Positions[i];
 		s_data.QuadVertexBufferPtr->Colour = quad_obj.color;
-		s_data.QuadVertexBufferPtr->TexCoord = texture_coords[i];
+		if (quad_obj.FlipTexture[0] == true && quad_obj.FlipTexture[1] == true)
+		{
+			s_data.QuadVertexBufferPtr->TexCoord = glm::vec2(1.0f) - texture_coords[i];
+		}
+		else if (quad_obj.FlipTexture[0] == true && quad_obj.FlipTexture[1] == false)
+		{
+			s_data.QuadVertexBufferPtr->TexCoord = { 1.0f - texture_coords[i].x, texture_coords[i].y };
+		}
+		else if (quad_obj.FlipTexture[0] == false && quad_obj.FlipTexture[1] == true)
+		{
+			s_data.QuadVertexBufferPtr->TexCoord = { texture_coords[i].x, 1.0f - texture_coords[i].y };
+		}
+		else
+		{
+			s_data.QuadVertexBufferPtr->TexCoord = texture_coords[i];
+		}
 		s_data.QuadVertexBufferPtr->TexIndex = texture_index;
 		s_data.QuadVertexBufferPtr->TilingFactor = quad_obj.tiling_factor;
 		s_data.QuadVertexBufferPtr++;
@@ -694,6 +809,80 @@ void renderer2d::m_draw_quad(render_object& quad_obj)
 
 	s_data.Quad_index_count += 6;
 	s_data.stats.QuadCount++;
+}
+
+void renderer2d::m_draw_polygon(render_object& geo_obj)
+{
+	std::string parent_texture = s_SubTexLibrary->get(geo_obj.Texture)->get_parent_texture();
+	const glm::vec2* texture_coords = s_SubTexLibrary->get(geo_obj.Texture)->get_tex_coords();
+	float texture_index = get_texture_index(parent_texture);
+
+	size_t vertex_count = geo_obj.verticies.size();
+
+	if (s_data.Geometry_index_count + vertex_count >= s_data.max_indicies + 1)
+	{
+		Next_Batch();
+	}
+
+
+	bool dont_skip = true;
+	if (s_SubTexLibrary->get(geo_obj.Texture)->GetTrueSubTex() == false)
+	{
+		dont_skip = false;
+	}
+
+	glm::vec2* geo_verticies	= (glm::vec2*)malloc(vertex_count * sizeof(glm::vec2));
+	glm::vec2 MaxTCoord			= glm::vec2( texture_coords[2].x, texture_coords[2].y );
+	glm::vec2 MinTCoord			= glm::vec2( texture_coords[0].x, texture_coords[0].y );
+
+	if (geo_verticies == nullptr)
+	{
+		Log::crit("COULDN'T ALLOCATE SUFFICENT MEMORY", __FILE__, __LINE__);
+	}
+	
+
+	for (size_t i = 0; i < vertex_count; i++)
+	{
+		if (dont_skip)
+		{
+			geo_verticies[i].x = Utility::denomralize<float>(geo_obj.verticies[i].get_tex_coord().y, MinTCoord.x, MaxTCoord.x);
+			geo_verticies[i].y = Utility::denomralize<float>(geo_obj.verticies[i].get_tex_coord().y, MinTCoord.y, MaxTCoord.y);
+		}
+		else
+		{
+			geo_verticies[i] = geo_obj.verticies[i].get_tex_coord();
+		}
+
+		s_data.GeoVertexBuffer->Position = geo_obj.transform * glm::vec4(geo_obj.verticies[i].position, 0.0f, 1.0f);
+		s_data.GeoVertexBuffer->Colour = geo_obj.verticies[i].color;
+		if (geo_obj.FlipTexture[0] == true && geo_obj.FlipTexture[1] == true)
+		{
+			s_data.GeoVertexBuffer->TexCoord = MaxTCoord - geo_verticies[i];
+		}
+		else if (geo_obj.FlipTexture[0] == true && geo_obj.FlipTexture[1] == false)
+		{
+			s_data.GeoVertexBuffer->TexCoord = { MaxTCoord.x - geo_verticies[i].x, geo_verticies[i].y };
+		}
+		else if (geo_obj.FlipTexture[0] == false && geo_obj.FlipTexture[1] == true)
+		{
+			s_data.GeoVertexBuffer->TexCoord = { geo_verticies[i].x, MaxTCoord.y - geo_verticies[i].y };
+		}
+		else
+		{
+			s_data.GeoVertexBuffer->TexCoord = geo_verticies[i];
+		}
+		s_data.GeoVertexBuffer->TexIndex = texture_index;
+		s_data.GeoVertexBuffer->TilingFactor = 1.0f;
+		s_data.GeoVertexBuffer++;
+	}
+
+	s_data.Geometry_index_count += geo_obj.ib->get_count();
+
+	s_data.Geo_VA0->add_index_buffer(geo_obj.ib);
+
+	free(geo_verticies);
+
+	Next_Batch();
 }
 
 void renderer2d::m_draw_circle(render_object& circle_obj)
@@ -822,6 +1011,9 @@ void renderer2d::Start_Batch()
 
 	s_data.Text_index_count = 0;
 	s_data.TextVertexBufferPtr = s_data.TextVertexBufferBase;
+
+	s_data.Geometry_index_count = 0;
+	s_data.GeoVertexBuffer = s_data.GeoVertexBufferBase;
 
 	s_data.CurrentSlotIndex = 1;
 }

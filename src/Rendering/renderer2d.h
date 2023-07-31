@@ -11,6 +11,7 @@
 #include "Orthographic_camera.h"
 
 struct render_object;
+extern class Geometry;
 
 struct QUADrender_param
 {
@@ -74,6 +75,7 @@ public:
 
 	static void draw_circle(CIRCLErender_param& render_data);
 	static void draw_line(LINErender_param& render_data);
+	static void draw_polygon(Geometry& geometry); //todo: add custom polygon draw function
 	
 	static void draw_text(Textrender_param& render_data, glm::vec2& position);
 
@@ -119,12 +121,14 @@ private:
 	static void Flush_Circles();
 	static void Flush_Lines();
 	static void Flush_Text();
+	static void Flush_Geo();
 
 
 	static void m_draw_quad(render_object& quad_obj);
 	static void m_draw_circle(render_object& circle_obj);
 	static void m_draw_line(render_object& line_obj);
 	static void m_draw_text(render_object& text_obj);
+	static void m_draw_polygon(render_object& geo_obj);
 
 	static void Next_Batch();
 	static void Start_Batch();

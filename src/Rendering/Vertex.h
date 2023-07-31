@@ -2,6 +2,13 @@
 
 #include <glm/glm.hpp>
 
+enum class VertexType
+{
+	QUAD = 0,
+	CIRLCE,
+	DEFUALT
+};
+
 struct Character
 {
 	unsigned int tex_id = 0;

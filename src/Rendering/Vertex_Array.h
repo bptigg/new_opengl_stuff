@@ -20,6 +20,7 @@ public:
 
 	void add_buffer(const Vertex_Buffer& vb, const Vertex_Buffer_Layout& layout);
 	void add_index_buffer(const std::shared_ptr<Index_Buffer>& ib);
+	const std::shared_ptr<Index_Buffer>& get_ib();
 
 	void bind() const;
 	void unbind() const;

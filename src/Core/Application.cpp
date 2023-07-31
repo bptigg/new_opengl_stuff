@@ -9,9 +9,16 @@
 #include "../utilities/utility.h"
 
 #include "../Rendering/Post_Processing.h"
+#include "../Rendering/Light.h";
+
+#include "../Core/Geometry.h"
 
 #define _USE_MATH_DEFINES
 #include <math.h>
+
+
+#include <stdlib.h> //just for testing code
+#include <time.h>
 
 
 #define BIND_EVENT_FN(x) std::bind(&x, this, std::placeholders::_1)
@@ -73,17 +80,23 @@ void Application::Run()
 
 	//temp code
 	Framebufferspec fbspec;
-	fbspec.Attachments = { FramebufferTextureFormat::RGBA8, FramebufferTextureFormat::RGBA8, FramebufferTextureFormat::RGBA8};
+	fbspec.Attachments = { FramebufferTextureFormat::RGBA8, FramebufferTextureFormat::RGBA8, FramebufferTextureFormat::RGBA8_SNORM};
 	fbspec.width = 1280;
 	fbspec.height = 720;
-	fbspec.samples = 8;
+	fbspec.samples = 1;
 	auto framebuffer = Framebuffer::Create(fbspec);
 
 	Framebufferspec fbspec2;
-	fbspec2.Attachments = { FramebufferTextureFormat::RGBA8 };
+	fbspec2.Attachments = { FramebufferTextureFormat::RGBA8};
 	fbspec2.width = 1280;
 	fbspec2.height = 720;
 	auto framebuffer2 = Framebuffer::Create(fbspec2);
+
+	Framebufferspec fbspec3;
+	fbspec3.Attachments = { FramebufferTextureFormat::RGBA8_SNORM};
+	fbspec3.width = 1280;
+	fbspec3.height = 720;
+	auto framebuffer3 = Framebuffer::Create(fbspec3);
 
 	std::shared_ptr<Texture_Data> screen = std::make_shared<Texture_Data>(Texture_Data());
 	screen->texture_id = framebuffer->get_color_attachment_renderer_id(0);
@@ -91,7 +104,7 @@ void Application::Run()
 	screen->bound = false;
 	screen->slot = 0;
 	screen->alive = true;
-	screen->multisampled = true;
+	screen->multisampled = false;
 	screen->always_rebind = true;
 
 	std::string screen_name = "m_screen";
@@ -110,6 +123,19 @@ void Application::Run()
 	std::string screen_name2 = "m_screen2";
 	renderer2d::get_texture_library()->Add(screen_name2, screen2);
 	renderer2d::get_subtexture_library()->create("s_screen2", screen_name2, *screen2, { 0,0 }, { screen2->size.x, screen2->size.y }, { 1,1 });
+
+	std::shared_ptr<Texture_Data> pos = std::make_shared<Texture_Data>(Texture_Data());
+	pos->texture_id = framebuffer->get_color_attachment_renderer_id(0);
+	pos->size = { framebuffer->GetSpec().width, framebuffer->GetSpec().height };
+	pos->bound = false;
+	pos->slot = 0;
+	pos->alive = true;
+	pos->multisampled = false;
+	pos->always_rebind = true;
+
+	std::string pos_name = "m_pos";
+	renderer2d::get_texture_library()->Add(pos_name, pos);
+	renderer2d::get_subtexture_library()->create("s_pos", pos_name, *pos, { 0,0 }, { pos->size.x, pos->size.y }, { 1,1 });
 
 	QUADrender_param pic;
 	pic.color = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -131,6 +157,47 @@ void Application::Run()
 
 	renderer2d::get_shader_library()->get("MSAA")->set_uniform_1iv("u_textures", 32, samplers);
 	renderer2d::get_shader_library()->get("Lighting")->set_uniform_1iv("u_textures", 32, samplers);
+	renderer2d::get_shader_library()->get("Lighting")->set_uniform_1i("u_lights", 1);
+
+	Light test(Light::LIGHT_TYPE::POINT_LIGHT, 0.2f, {0.05,0.0,0.5 }, { 1.0f, 0.0f, 0.0f });
+	update_screen_details("Lighting");
+	test.set_aspect_ratio(1280.0f, 720.0f);
+	test.send_to_shader("Lighting");
+
+	//temp geo code
+	srand(time(NULL));
+	std::vector<Geometry_Vertex> verticies;
+
+	Geometry_Vertex v1;
+	v1.position = { -1.0f, -0.5f };
+	verticies.push_back(v1);
+	Geometry_Vertex v2;
+	v2.position = { -1.0f, 0.5f };
+	verticies.push_back(v2);
+	Geometry_Vertex v3;
+	v3.position = { -0.5f, 1.0f };
+	verticies.push_back(v3);
+	Geometry_Vertex v4;
+	v4.position = { 0.5f, 1.0f };
+	verticies.push_back(v4);
+	Geometry_Vertex v5;
+	v5.position = { 1.0f, 0.5f};
+	verticies.push_back(v5);
+	Geometry_Vertex v6;
+	v6.position = {	1.0f, -0.5f };
+	verticies.push_back(v6);
+	Geometry_Vertex v7;
+	v7.position = { 0.5f, -1.0f };
+	verticies.push_back(v7);
+	Geometry_Vertex v8;
+	v8.position = { -0.5f, -1.0f };
+	verticies.push_back(v8);
+
+
+	Geometry geo_test(verticies);
+	geo_test.set_layer(2);
+	geo_test.set_scale(200.0f);
+
 
 	while (m_running)
 	{
@@ -206,6 +273,8 @@ void Application::Run()
 
 			renderer2d::draw_quad({ 0,0 }, square3);
 
+			//renderer2d::draw_polygon(geo_test);
+
 			if (Framebufferspec spec = framebuffer->GetSpec(); spec.width != m_window->Get_Width() || spec.height != m_window->Get_Height())
 			{
 				framebuffer->Resize((uint32_t)m_window->Get_Width(), (uint32_t)m_window->Get_Height());
@@ -223,7 +292,7 @@ void Application::Run()
 
 			framebuffer->Unbind();
 
-			renderer2d::get_texture_library()->get("m_screen")->texture_id = framebuffer->get_color_attachment_renderer_id(0);
+			//renderer2d::get_texture_library()->get("m_screen")->texture_id = framebuffer->get_color_attachment_renderer_id(0);
 			//renderer2d::get_texture_library()->get("m_screen")->texture_id = framebuffer->get_depth_attachment_renderer_id();
 
 			/*
@@ -238,30 +307,37 @@ void Application::Run()
 			renderer2d::draw();
 			*/
 
-			PostProcessing::MSAA("MSAA", pic, framebuffer->GetSpec(), framebuffer2);
+			//PostProcessing::MSAA("MSAA", pic, framebuffer->GetSpec(), framebuffer2);
+			
+			//renderer2d::get_texture_library()->get("m_screen")->texture_id = framebuffer->get_color_attachment_renderer_id(2);
+			//PostProcessing::MSAA("MSAA", pic, framebuffer->GetSpec(), framebuffer3);
 
 			//glm::mat4 mvp = glm::ortho(0.0f, 16.0f / 9.0f, 0.0f, 1.0f, -1.0f, 1.0f);
 			//renderer2d::get_shader_library()->get("Lighting")->set_uniform_mat_4f("u_view_proj", mvp);
 			
-			renderer2d::get_texture_library()->get("m_screen2")->texture_id = framebuffer2->get_color_attachment_renderer_id(0);
+			renderer2d::get_texture_library()->get("m_screen2")->texture_id = framebuffer->get_color_attachment_renderer_id(0);
+			renderer2d::get_texture_library()->get("m_pos")->texture_id = framebuffer->get_color_attachment_renderer_id(2);
 			//renderer2d::get_texture_library()->get("m_screen2")->texture_id = framebuffer->get_color_attachment_renderer_id(1);
 			
 			//renderer2d::unbind_texture("m_screen2");
-			int albedo = (int)renderer2d::bind_texture("m_screen2");
-			//int depth = (int)renderer2d::bind_texture("m_screen2");
-			
-			//renderer2d::get_shader_library()->get("Lighting")->set_uniform_1i("gDepth", depth);
-			renderer2d::get_shader_library()->get("Lighting")->set_uniform_1i("gAlbedo", albedo);
-			
+			//int albedo = (int)renderer2d::bind_texture("m_screen2");
+			//int position = (int)renderer2d::bind_texture("m_pos");
+			////int depth = (int)renderer2d::bind_texture("m_screen2");
+			//
+			//renderer2d::get_shader_library()->get("Lighting")->set_uniform_1i("gPosition", position);
+			//renderer2d::get_shader_library()->get("Lighting")->set_uniform_1i("gAlbedo", albedo);
+			//
 			pic.Texture = "s_screen2";
-			//pic.Texture = "";
-			
-			glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-			
-			renderer2d::update_quad_shader("Lighting");
-			//renderer2d::Begin_Scene(m_camera->get_camera());
-			renderer2d::draw_quad({ 0.5f, 0.5f }, pic);
-			renderer2d::End_Scene();
+			////pic.Texture = "";
+			//
+			//glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+			//
+			//renderer2d::update_quad_shader("Lighting");
+			////renderer2d::Begin_Scene(m_camera->get_camera());
+			//renderer2d::draw_quad({ 0.5f, 0.5f }, pic);
+			//renderer2d::End_Scene();
+
+			PostProcessing::DefferedLighting("Lighting", pic, { "m_screen2", "m_pos" }, m_camera);
 			
 			pic.Texture = "s_screen";
 

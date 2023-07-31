@@ -145,6 +145,8 @@ void Framebuffer::Invalidate()
             case FramebufferTextureFormat::RED_INTEGER:
                 Utils::Attach_Color_Texture(m_color_attachments[i], m_specification.samples, GL_R32I, GL_RED_INTEGER, m_specification.width, m_specification.height, i);
                 break;
+            case FramebufferTextureFormat::RGBA8_SNORM:
+                Utils::Attach_Color_Texture(m_color_attachments[i], m_specification.samples, GL_RGBA8_SNORM, GL_RGBA, m_specification.width, m_specification.height, i);
             default:
                 break;
             }

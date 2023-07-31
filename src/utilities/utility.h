@@ -62,4 +62,16 @@ namespace Utility
 		return false;
 	}
 
+	template<typename t>
+	t normalize(t value, t min, t max)
+	{
+		return (value - min) / (max - min);
+	}
+
+	template <typename t>
+	t denomralize(t value, t min, t max)
+	{
+		return (value * (max - min)) + min;
+	}
+
 }

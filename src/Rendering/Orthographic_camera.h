@@ -22,6 +22,9 @@ public:
 	const glm::mat4& Get_View_Matrix() const { return m_View_Matrix; }
 	const glm::mat4& Get_View_Projection_Matrix() const { return m_View_Projection_Matrix_cache; }
 
+	inline const bool get_update() const { return view_matrix_updated; }
+	inline void got_update() { view_matrix_updated = false; }
+
 private:
 	void Recalculate_View_Matrix();
 private:
@@ -32,5 +35,6 @@ private:
 	glm::vec2 m_Position;
 
 	bool update_view_matrix = true;
+	bool view_matrix_updated = true;
 };
 

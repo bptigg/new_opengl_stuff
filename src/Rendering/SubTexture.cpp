@@ -7,6 +7,14 @@ SubTexture::SubTexture(const std::string& parent_texture, const glm::vec2& min, 
 	m_tex_coords[1] = { max.x, min.y };
 	m_tex_coords[2] = { max.x, max.y };
 	m_tex_coords[3] = { min.x, max.y };
+
+	if (min.x == 0.0f && min.y == 0.0f)
+	{
+		if (max.x == 1.0f && max.y == 1.0f)
+		{
+			m_TrueSubTex = false;
+		}
+	}
 }
 
 std::shared_ptr<SubTexture> SubTexture::create_from_coords(const std::string& parent_name, const Texture_Data& parent, const glm::vec2 coords, const glm::vec2& CellSize, const glm::vec2& SpriteSize)

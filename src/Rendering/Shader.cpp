@@ -179,6 +179,18 @@ void shader::set_uniform_1f(const std::string& name, float v0)
     GlCall(glUniform1f(get_uniform_location(name), v0));
 }
 
+void shader::set_uniform_2f(const std::string& name, float v0, float v1)
+{
+    bind();
+    GlCall(glUniform2f(get_uniform_location(name), v0, v1));
+}
+
+void shader::set_uniform_3f(const std::string& name, float v0, float v1, float v2)
+{
+    bind();
+    GlCall(glUniform3f(get_uniform_location(name), v0, v1, v2));
+}
+
 void shader::set_uniform_4f(const std::string& name, float v0, float v1, float v2, float v3)
 {
     bind();
